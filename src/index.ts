@@ -1,36 +1,173 @@
-import G6 from '@antv/g6';
-
+import G6, {NodeConfig} from "@antv/g6";
 
 const data = {
-    // 点集
     nodes: [
         {
-            id: 'node1', // String，该节点存在则必须，节点的唯一标识
-            x: 100, // Number，可选，节点位置的 x 值
-            y: 200, // Number，可选，节点位置的 y 值
+            id: "node1",
+            label: "node 1",
+            x: 150,
+            y: 150,
+            model:{
+                input:[],
+                output:[
+                    'p1',
+                    'v1'
+                ]
+            },
+            shape: 'diamond'
         },
         {
-            id: 'node2', // String，该节点存在则必须，节点的唯一标识
-            x: 300, // Number，可选，节点位置的 x 值
-            y: 200, // Number，可选，节点位置的 y 值
-        },
-    ],
-    // 边集
-    edges: [
-        {
-            source: 'node1', // String，必须，起始点 id
-            target: 'node2', // String，必须，目标点 id
-        },
-    ],
+            id: "node2",
+            label: "node 2",
+            x: 400,
+            y: 150,
+            model:{
+                input:[]
+                ,
+                output:[
+                    'p2',
+                    'v2'  ]
+            },
+            shape: 'diamond'
+        }
+    ]
 };
 
 const graph = new G6.Graph({
-    container: 'mountNode', // String | HTMLElement，必须，在 Step 1 中创建的容器 id 或容器本身
-    width: 800, // Number，必须，图的宽度
-    height: 500, // Number，必须，图的高度
+    container: "container",
+    width: 1200,
+    height: 1200,
+    renderer: 'svg',
+    modes: {
+        default: [
+            {
+                type: 'drag-node',
+                enableDelegate: true
+            },
+            {
+                type: 'test'
+            }
+        ]
+    }
+
 });
 
 
 
-graph.data(data); // 读取 Step 2 中的数据源到图上
-graph.render(); // 渲染图
+const DefaultOptions = {
+    color: 'blue',
+    size: [150,40],
+    anchorPoints:[[0,0.5], [1,0.5]],
+    anchorStyle: {
+        fill: '#4498b6'
+    }
+};
+
+
+
+
+
+
+G6.registerNode('diamond', {
+    draw(cfg: any, group: any) {
+        let defalutOptions = DefaultOptions;
+        cfg = Object.assign(defalutOptions,cfg);
+        // 如果 cfg 中定义了 style 需要同这里的属性进行融合
+     /*   const shape = group.addShape('path', {
+            attrs: {
+                path: this.getPath(cfg), // 根据配置获取路径
+                stroke: cfg.color // 颜色应用到边上，如果应用到填充，则使用 fill: cfg.color
+            }
+        });*/
+        const size = cfg.size;
+        const shape = group.addShape('rect', {
+            attrs: {
+                x: 0, // 居中
+                y: 0,
+                width: size[0],
+                height: size[1],
+                radius: 4,
+                fill: '#404040',
+                shadowOffsetX: 2,
+                shadowOffsetY: 2,
+                shadowColor: '#333333',
+                shadowBlur: 2,
+            }
+        });
+        this.drawAnchorPoint(cfg,group);
+        if(cfg.label) { // 如果有文本
+            // 如果需要复杂的文本配置项，可以通过 labeCfg 传入
+            // const style = (cfg.labelCfg && cfg.labelCfg.style) || {};
+            // style.text = cfg.label;
+            group.addShape('text', {
+                // attrs: style
+                attrs: {
+                    x: 0 + size[0] / 2, // 居中
+                    y: 0 - 20,
+                    textAlign: 'center',
+                    textBaseline: 'middle',
+                    text: cfg.label,
+                    fill: '#e4e4e4'
+                }
+            });
+        }
+        return shape;
+    },
+    // 返回菱形的路径
+    drawAnchorPoint(cfg: any,group: any) {
+        function getR(size: any) {
+            let minSize;
+            if(cfg.size[0] < cfg.size[1]){
+                minSize = size[0]
+            } else {
+                minSize = size[1]
+            }
+            return minSize * 0.075;
+        }
+        if(cfg.anchorPoints) {
+            cfg.anchorPoints.forEach((item: any) => {
+                group.addShape('circle', {
+                    attrs: Object.assign(cfg.anchorStyle,{
+                        x: item[0] * cfg.size[0],
+                        y: item[1] * cfg.size[1],
+                        r: 3.5
+                    })
+                });
+
+            })
+        }
+
+    },
+});
+
+
+G6.registerBehavior('test', {
+    // 设定该自定义行为需要监听的事件及其响应函数
+    getEvents() {
+    debugger
+        return {
+            'node:click': 'onNodeClick' ,   // 监听事件 node:click，响应函数时 onClick
+        };
+    },
+    // getEvents 中定义的 'node:click' 的响应函数
+    onNodeClick(e:any) {
+    debugger
+
+    },
+    // getEvents 中定义的 mousemove 的响应函数
+    onCanvasClick(ev: any) {
+    debugger
+    },
+    // getEvents 中定义的 'edge:click' 的响应函数
+    removeNodesState(ev: any) {
+    debugger
+    }
+});
+/*graph.on('node:click', ev => {
+    debugger
+    const shape = ev.target;
+    const node = ev.item;
+});*/
+
+graph.data(data);
+graph.render();

@@ -17,7 +17,7 @@
   ],
   "author": "JongWong",
   "dependencies": {
-    "@antv/g6": "^3.2.7"
+    "@antv/g6": "^3.1.0"
   },
   "devDependencies": {
     "@types/jasmine": "^3.4.6",
