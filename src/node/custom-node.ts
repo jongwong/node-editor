@@ -62,8 +62,39 @@ G6.registerNode(
           }
         });
       }
+      if (cfg.icon) {
+        group.addShape("text", {
+          attrs: {
+            x: size[0] / 2,
+            y: size[1] / 2,
+            fontFamily: "iconfont", // 对应css里面的font-family: "iconfont";
+            textAlign: "center",
+            textBaseline: "middle",
+            text: cfg.icon,
+            fontSize: Math.abs(size[1] * 0.8),
+            class: "graph-node-icon"
+          }
+        });
+      }
+
       this.drawAnchorPoint(cfg, group);
       return shape;
+    },
+    setState(name: any, value: any, item: any) {
+      const keyShape = item.getKeyShape();
+      let originStyle = item.getOriginStyle();
+      let stateStyle = this.options.stateStyles[name];
+
+      if (value) {
+        keyShape.attr(stateStyle);
+      } else if (value === false) {
+        let temp = "";
+        try {
+          let itemClass = keyShape._attr.class;
+          temp = itemClass.replace(this.options[name].class, "");
+        } catch (e) {}
+        keyShape.attr(Object.assign(originStyle, { class: temp }));
+      }
     },
     update(cfg: any, node: any) {
       const group = node.getContainer(); // 获取容器

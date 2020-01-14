@@ -13,13 +13,8 @@ G6.registerBehavior("custom-brush-select", {
       "canvas:mousedown": "onMousedown",
       mousemove: "onMousemove",
       mouseup: "onMouseup",
-      "canvas:click": "clearStates",
-      "item-change": "itemChange"
+      "canvas:click": "clearStates"
     };
-  },
-  itemChange() {
-    this.selectedNodes = [];
-    this.selectedEdges = [];
   },
   clearStates(ev: any) {
     const graph = this.graph;

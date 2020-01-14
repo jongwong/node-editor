@@ -1,5 +1,5 @@
 import G6, { Util } from "@antv/g6";
-
+import { cloneDeep } from "lodash";
 G6.registerEdge(
   "custom-edge",
   {
@@ -13,14 +13,31 @@ G6.registerEdge(
       },
       stateStyles: {
         hover: {
-          stroke: "blue",
-          lineWidth: 3
+          class: "graph-edge-hover"
+        },
+        draging: {
+          class: "graph-edge-draging"
         },
         // 选中节点状态下的配置
         selected: {
-          stroke: "red",
-          opacity: "0.3"
+          class: "graph-edge-selected"
         }
+      }
+    },
+    setState(name: any, value: any, item: any) {
+      const keyShape = item.getKeyShape();
+      let originStyle = item.getOriginStyle();
+      let stateStyle = this.options.stateStyles[name];
+
+      if (value) {
+        keyShape.attr(stateStyle);
+      } else if (value === false) {
+        let temp = "";
+        try {
+          let itemClass = keyShape._attr.class;
+          temp = itemClass.replace(this.options[name].class, "");
+        } catch (e) {}
+        keyShape.attr(Object.assign(originStyle, { class: temp }));
       }
     },
     getControlPoints(cfg: any) {

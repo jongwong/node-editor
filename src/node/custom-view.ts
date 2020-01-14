@@ -1,21 +1,22 @@
 import G6 from "@antv/g6";
 import { cloneDeep } from "lodash";
 G6.registerNode(
-  "custom-node",
+  "custom-view",
   {
     options: {
+      label: "view",
       // 鼠标 hover 状态下的配置
       color: "blue",
 
       anchorPoints: [
-        [0, 0.5],
+        /*  [0, 0.5],*/
         [1, 0.5]
       ],
       anchorStyle: {
         fill: "#4498b6",
         class: "anchor"
       },
-      size: [150, 40],
+      size: [70, 30],
       stateStyles: {
         hover: {
           fill: "#555555"
@@ -43,24 +44,39 @@ G6.registerNode(
           shadowBlur: 2
         }
       });
+
+      // 如果有文本
+      // 如果需要复杂的文本配置项，可以通过 labeCfg 传入
+      // const style = (cfg.labelCfg && cfg.labelCfg.style) || {};
+      // style.text = cfg.label;
+      let label = cfg.label || this.options.label || "";
+      group.addShape("text", {
+        // attrs: style
+        attrs: {
+          x: size[0] / 2, // 居中
+          y: 0 - 20,
+          textAlign: "center",
+          textBaseline: "middle",
+          text: label,
+          fill: "#e4e4e4",
+          class: "node-label"
+        }
+      });
+
+      group.addShape("text", {
+        attrs: {
+          x: size[0] / 2,
+          y: size[1] / 2,
+          fontFamily: "iconfont", // 对应css里面的font-family: "iconfont";
+          textAlign: "center",
+          textBaseline: "middle",
+          text: "\ue600",
+          fontSize: Math.abs(size[1] * 0.8),
+          class: "graph-view"
+        }
+      });
       this.drawAnchorPoint(cfg, group);
-      if (cfg.label) {
-        // 如果有文本
-        // 如果需要复杂的文本配置项，可以通过 labeCfg 传入
-        // const style = (cfg.labelCfg && cfg.labelCfg.style) || {};
-        // style.text = cfg.label;
-        group.addShape("text", {
-          // attrs: style
-          attrs: {
-            x: size[0] / 2, // 居中
-            y: 0 - 20,
-            textAlign: "center",
-            textBaseline: "middle",
-            text: cfg.label,
-            fill: "#e4e4e4"
-          }
-        });
-      }
+
       return shape;
     },
     drawAnchorPoint(cfg: any, group: any) {

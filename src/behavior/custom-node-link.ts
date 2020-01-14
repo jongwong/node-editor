@@ -1,6 +1,7 @@
 import G6 from "@antv/g6";
 import { v4 } from "uuid";
 import { isAnchor } from "@/util";
+import { graph } from "@/index";
 
 G6.registerBehavior("custom-node-link", {
   // 设定该自定义行为需要监听的事件及其响应函数
@@ -45,6 +46,7 @@ G6.registerBehavior("custom-node-link", {
         shape: "custom-edge"
       };
       this.edge = graph.addItem("edge", item);
+      graph.setItemState(this.edge, "draging", true);
       this.addingEdge = true;
     }
   },
@@ -116,10 +118,12 @@ G6.registerBehavior("custom-node-link", {
       const id = node.getModel().id;
       const point = { x: ev.x, y: ev.y };
       let targetPoint = node.getLinkPoint(point) as any;
+      graph.clearItemStates(this.edge, "draging");
       graph.updateItem(this.edge, {
         targetAnchor: targetPoint.index,
         target: id
       });
+
       this.edge = null;
       this.addingEdge = false;
     }

@@ -3,7 +3,7 @@ import G6, { NodeConfig } from "@antv/g6";
 import "./behavior";
 import "./node/custom-node";
 import "./node/custom-edge";
-
+import "./node/custom-view";
 import "./operation/addItem";
 import { addNode } from "@/operation/addItem";
 import "./behavior/node-lable-edit";
@@ -11,9 +11,22 @@ import "./behavior/node-lable-edit";
 const data = {
   nodes: [
     {
+      id: "view",
+      shape: "custom-node",
+      anchorPoints: [
+        /*  [0, 0.5],*/
+        [1, 0.5]
+      ],
+      label: "view",
+      icon: "\ue600",
+      size: [70, 30],
+      x: 700,
+      y: 600
+    },
+    {
       id: "node1",
       label: "node 1",
-      x: 125,
+      x: 325,
       y: 253,
       data: { input: [], output: ["p1", "v1"] },
       shape: "custom-node"
@@ -21,7 +34,7 @@ const data = {
     {
       id: "node2",
       label: "node 2",
-      x: 400,
+      x: 600,
       y: 150,
       data: { input: [], output: ["p2", "v2"] },
       shape: "custom-node"
@@ -29,7 +42,7 @@ const data = {
     {
       id: "node3",
       label: "node 3",
-      x: 393,
+      x: 593,
       y: 378,
       data: { input: [], output: ["p2", "v2"] },
       shape: "custom-node"
@@ -37,7 +50,7 @@ const data = {
     {
       id: "node6",
       label: "node 6",
-      x: 655,
+      x: 855,
       y: 382,
       data: { input: [], output: ["p1", "v1"] },
       shape: "custom-node"
@@ -45,7 +58,7 @@ const data = {
     {
       id: "node5",
       label: "node 5",
-      x: 650,
+      x: 850,
       y: 224,
       data: { input: [], output: ["p1", "v1"] },
       shape: "custom-node"
@@ -53,7 +66,7 @@ const data = {
     {
       id: "node4",
       label: "node 4",
-      x: 647,
+      x: 847,
       y: 58,
       data: { input: [], output: ["p1", "v1"] },
       shape: "custom-node"
@@ -135,6 +148,9 @@ export const graph = new G6.Graph({
       },
       {
         type: "node-lable-edit"
+      },
+      {
+        type: "custom-node-hover"
       }
     ]
   }
@@ -149,7 +165,6 @@ graph.on("node:mouseleave", evt => {
 });*/
 
 graph.on("node-select-change", (ev: any) => {
-  console.log(ev);
   let { targets } = ev;
   let { nodes } = targets;
   graph.on("keyup", (ev: any) => {
