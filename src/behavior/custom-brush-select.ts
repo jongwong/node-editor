@@ -13,8 +13,13 @@ G6.registerBehavior("custom-brush-select", {
       "canvas:mousedown": "onMousedown",
       mousemove: "onMousemove",
       mouseup: "onMouseup",
-      "canvas:click": "clearStates"
+      "canvas:click": "clearStates",
+      "item-change": "itemChange"
     };
+  },
+  itemChange() {
+    this.selectedNodes = [];
+    this.selectedEdges = [];
   },
   clearStates(ev: any) {
     const graph = this.graph;
@@ -35,13 +40,6 @@ G6.registerBehavior("custom-brush-select", {
 
     this.selectedEdges = [];
     this.onDeselect && this.onDeselect(this.selectedNodes, this.selectedEdges);
-    graph.emit("node-select-change", {
-      targets: {
-        nodes: [],
-        edges: []
-      },
-      select: false
-    });
     graph.paint();
     graph.setAutoPaint(autoPaint);
   },
@@ -145,6 +143,9 @@ G6.registerBehavior("custom-brush-select", {
     if (!this.brush && !this.dragging) {
       return;
     }
+    const originPoint = this.originPoint;
+    const p1 = this.graph.getPointByCanvas(originPoint.x, originPoint.y);
+    const p2 = { x: ev.x, y: ev.y };
     const graph = this.graph;
     const autoPaint = graph.get("autoPaint");
     graph.setAutoPaint(false);
@@ -187,7 +188,8 @@ G6.registerBehavior("custom-brush-select", {
         condition =
           right >= bbox.minX &&
           left < bbox.maxX &&
-          bottom >= bbox.minY && top < bbox.maxY;
+          bottom >= bbox.minY &&
+          top < bbox.maxY;
       }
 
       if (condition) {

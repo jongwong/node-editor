@@ -149,7 +149,18 @@ graph.on("node:mouseleave", evt => {
 });*/
 
 graph.on("node-select-change", (ev: any) => {
-  //console.log(ev);
+  console.log(ev);
+  let { targets } = ev;
+  let { nodes } = targets;
+  graph.on("keyup", (ev: any) => {
+    let { key } = ev;
+    if (key === "Delete" && nodes.length > 0) {
+      nodes.forEach((node: any) => {
+        graph.removeItem(node);
+        node.destroy();
+      });
+    }
+  });
 });
 graph.data(data);
 graph.render();

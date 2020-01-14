@@ -13,9 +13,11 @@ G6.registerBehavior("custom-node-select", {
   },
   nodeCache: [],
   clearState: (item: any) => {
-    if (item.hasState("selected")) {
-      graph.clearItemStates(item, "selected");
-    }
+    try {
+      if (item.hasState("selected")) {
+        graph.clearItemStates(item, "selected");
+      }
+    } catch (e) {}
   },
   clearAll() {
     if (this.nodeCache.length > 0) {

@@ -28,6 +28,7 @@ G6.registerNode(
       }
     },
     draw(cfg: any, group: any) {
+      this.group = group;
       const size = cfg.size || this.options.size;
       const shape = group.addShape("rect", {
         attrs: {
@@ -43,7 +44,6 @@ G6.registerNode(
           shadowBlur: 2
         }
       });
-      this.drawAnchorPoint(cfg, group);
       if (cfg.label) {
         // 如果有文本
         // 如果需要复杂的文本配置项，可以通过 labeCfg 传入
@@ -62,7 +62,22 @@ G6.registerNode(
           }
         });
       }
+      this.drawAnchorPoint(cfg, group);
       return shape;
+    },
+    update(cfg: any, node: any) {
+      const group = node.getContainer(); // 获取容器
+      const shape = group.get("children")[1]; // 按照添加的顺序
+      const size = cfg.size || this.options.size;
+      shape.attr({
+        x: size[0] / 2, // 居中
+        y: 0 - 20,
+        textAlign: "center",
+        textBaseline: "middle",
+        text: cfg.label,
+        fill: "#e4e4e4",
+        class: "node-label"
+      });
     },
     drawAnchorPoint(cfg: any, group: any) {
       function getR(size: any) {
