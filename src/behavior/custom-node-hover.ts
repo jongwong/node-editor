@@ -13,9 +13,11 @@ G6.registerBehavior("custom-node-hover", {
   },
   onMouseenter(ev: any) {
     let { item } = ev;
-    console.log(item);
     this.item = item;
-    graph.setItemState(item, "hover", true);
+    const state = this.item.hasState("selected");
+    if (!state) {
+      graph.setItemState(item, "hover", true);
+    }
   },
   onMouseleave(ev: any) {
     const state = this.item.hasState("selected");

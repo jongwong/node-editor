@@ -166,13 +166,23 @@ graph.on("node:mouseleave", evt => {
 
 graph.on("node-select-change", (ev: any) => {
   let { targets } = ev;
-  let { nodes } = targets;
+  let { nodes, edges } = targets;
   graph.on("keyup", (ev: any) => {
     let { key } = ev;
     if (key === "Delete" && nodes.length > 0) {
-      nodes.forEach((node: any) => {
-        graph.removeItem(node);
-        node.destroy();
+      nodes.forEach((item: any) => {
+        try {
+          if (item.getModel().id !== "view") {
+            graph.removeItem(item);
+          }
+        } catch (e) {}
+      });
+      edges.forEach((item: any) => {
+        try {
+          if (item.getModel().id !== "view") {
+            graph.removeItem(item);
+          }
+        } catch (e) {}
       });
     }
   });

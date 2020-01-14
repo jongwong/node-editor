@@ -11,27 +11,44 @@ G6.registerBehavior("custom-node-drag", {
       "node:dragend": "onDragEnd"
     };
   },
-  nodeCache: {
-    node: null,
-    dx: null,
-    dy: null
-  },
+  nodeCache: [],
+  onAllDragStart(ev: any) {},
   onDragStart(ev: any) {
+    this.nodeCache = [];
     if (isAnchor(ev)) return;
-    const { item } = ev;
-    const model = item.getModel();
-    this.nodeCache.node = item;
-    this.nodeCache.dx = model.x - ev.x;
-    this.nodeCache.dy = model.y - ev.y;
+    const nodes = graph.findAllByState("node", "selected");
+    if (nodes.length > 0) {
+      nodes.forEach((item: any) => {
+        const model = item.getModel();
+        this.nodeCache.push({
+          id: model.id,
+          node: item,
+          dx: model.x - ev.x,
+          dy: model.y - ev.y
+        });
+      });
+    } else {
+      const { item } = ev;
+      const model = item.getModel();
+      this.nodeCache.push({
+        id: model.id,
+        node: item,
+        dx: model.x - ev.x,
+        dy: model.y - ev.y
+      });
+    }
   },
   onDrag(ev: any) {
-    this.nodeCache.node &&
-      graph.update(this.nodeCache.node, {
-        x: ev.x + this.nodeCache.dx,
-        y: ev.y + this.nodeCache.dy
+    if (this.nodeCache.length > 0) {
+      this.nodeCache.forEach((item: any) => {
+        graph.update(item.node, {
+          x: ev.x + item.dx,
+          y: ev.y + item.dy
+        });
       });
+    }
   },
   onDragEnd(ev: any) {
-    this.nodeCache.node = undefined;
+    this.nodeCache = [];
   }
 });
