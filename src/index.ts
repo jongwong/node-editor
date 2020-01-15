@@ -1,12 +1,16 @@
 import G6, { NodeConfig } from "@antv/g6";
 
+// @ts-ignore
+import * as Minimap from "@antv/g6/plugins/minimap";
+
+// @ts-ignore
+import * as Grid from "@antv/g6/plugins/grid";
+
 import "./behavior";
 import "./node/custom-node";
 import "./node/custom-edge";
 import "./node/custom-view";
 import "./operation/addItem";
-import { addNode } from "@/operation/addItem";
-import "./behavior/node-lable-edit";
 
 const data = {
   nodes: [
@@ -130,17 +134,25 @@ const data = {
   ],
   groups: []
 };
-
+const grid = new Grid();
+const minimap = new Minimap({
+  size: [100, 100],
+  className: "minimap",
+  viewportClassName: "minimap-viewport",
+  stroke: "red",
+  type: "keyShape"
+});
 export const graph = new G6.Graph({
   container: "container",
   width: 1920,
-  height: 800,
+  height: 700,
   renderer: "svg",
   defaultEdge: {
     linkRule: function(source: any, target: any) {
       return true;
     }
   },
+  plugins: [minimap, grid],
   modes: {
     default: [
       {
@@ -160,10 +172,23 @@ export const graph = new G6.Graph({
       },
       {
         type: "custom-node-hover"
+      },
+      {
+        type: "zoom-canvas"
+      },
+      {
+        type: "key-cache"
+      },
+      {
+        type: "key-cache"
+      },
+      {
+        type: "custom-canvas-drag"
       }
     ]
   }
 });
+graph.set("keyCache", []);
 graph.on("node-select-change", (ev: any) => {
   let { targets } = ev;
   let { nodes, edges } = targets;

@@ -1,6 +1,5 @@
 import G6 from "@antv/g6";
 import { graph } from "@/index";
-import { keyMode } from "@/util";
 
 G6.registerBehavior("custom-node-select", {
   // 设定该自定义行为需要监听的事件及其响应函数
@@ -42,7 +41,9 @@ G6.registerBehavior("custom-node-select", {
       return;
     }
     const state = item.hasState("selected");
-    if (keyMode.includes("shift")) {
+    let keyCache = graph.get("keyCache");
+
+    if (keyCache.includes("Shift")) {
       if (state) {
         graph.clearItemStates(item, "selected");
 

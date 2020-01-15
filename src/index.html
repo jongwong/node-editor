@@ -44,6 +44,10 @@
         stroke-width: 3px;
       }
       #container {
+        bottom: 0;
+        top: 0;
+        left: 0;
+        right: 0;
         background-color: #333333;
         -webkit-user-select: none;
         -moz-user-select: none;
@@ -53,6 +57,7 @@
       body {
         margin: 0;
         padding: 0;
+        /*cursor: pointer;*/
       }
       .selected-brush-right {
         stroke-dasharray: 5px;
@@ -81,6 +86,20 @@
       .anchor-label {
         font-size: 10px;
         fill: #e4e4e4;
+      }
+      .minimap {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        border: none;
+        box-shadow: -3px -3px 5px #292929;
+        /*background-color: #363636 !important;*/
+      }
+      .minimap-viewport {
+        border: 1px solid #636363 !important;
+      }
+      .minimap-viewport:hover {
+        border: 2px solid #bebebe !important;
       }
     </style>
   </body>

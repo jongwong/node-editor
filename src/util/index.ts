@@ -1,3 +1,5 @@
+import { graph } from "@/index";
+
 export const isAnchor = (ev: any) => {
   const getClassName = (target: any) => {
     if (target._attrs && target._attrs.class) {
@@ -11,16 +13,6 @@ export const isAnchor = (ev: any) => {
   if (targetName == "anchor") return true;
   else return false;
 };
-export let keyMode: Array<any> = [];
-document.addEventListener("keydown", event => {
-  if (event.shiftKey && !keyMode.includes("shift")) {
-    let key = "shift" as string;
-    keyMode = keyMode.concat(["shift"]);
-  }
-});
-document.addEventListener("keyup", event => {
-  keyMode = [];
-});
 
 export const formatData = function(data: any) {
   data.nodes.forEach((node: any) => {
