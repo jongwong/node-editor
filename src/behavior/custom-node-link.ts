@@ -1,4 +1,4 @@
-import G6 from "@antv/g6";
+import G6, { Edge } from "@antv/g6";
 import { v4 } from "uuid";
 import { isAnchor } from "@/util";
 import { graph } from "@/index";
@@ -12,27 +12,19 @@ G6.registerBehavior("custom-node-link", {
       mouseup: "onMouseup"
     };
   },
-  addEdgeCheck(ev: any, inFlag = undefined) {
-    const { graph } = this;
-    const linkRule = graph.get("defaultEdge").linkRule;
-    // 如果点击的不是锚点就结束
-    if (!isAnchor(ev)) return false;
-    // 出入度检查
-    // return checkOutAndInEdge(ev.item as Node, inFlag, linkRule);
-    return true;
-  },
-  notSelf(ev: any) {
-    const node = ev.item;
-    const model = node.getModel();
-    if (this.edge.getSource().getModel().id === model.id) return false;
+  notSelf(node: any) {
+    try {
+      const model = node.getModel();
+      if (this.edge.getSource().getModel().id === model.id) return false;
+    } catch (e) {}
+
     return true;
   },
   onMousedown(ev: any) {
     const { edgeType } = this;
-    if (!this.addEdgeCheck.call(this, ev, "out")) return;
+    if (!isAnchor(ev)) return false;
     const node = ev.item;
     const graph = this.graph;
-    const linkRule = graph.get("defaultEdge").linkRule;
     this.sourceNode = node;
     const point = { x: ev.x, y: ev.y };
     const model = node.getModel();
@@ -55,9 +47,8 @@ G6.registerBehavior("custom-node-link", {
     const { graph } = this;
     if (this.addingEdge && this.edge) {
       const point = { x: ev.x, y: ev.y };
-      // 鼠标放置到一个锚点上时，更新边
-      // 否则只更新线的终点位置
-      if (this.addEdgeCheck.call(this, ev, "in") && this.notSelf(ev)) {
+
+      if (this.linkCheck(ev, "in")) {
         const node = ev.item;
         const model = node.getModel();
         graph.updateItem(this.edge, {
@@ -100,6 +91,27 @@ G6.registerBehavior("custom-node-link", {
     }
   },
 
+  linkCheck(ev: any, mode: string) {
+    const { item } = ev;
+
+    if (!isAnchor(ev)) return false;
+    if (mode && mode === "in") {
+      return;
+    } else if (mode && mode === "up") {
+      if (!this.notSelf(item)) return;
+      if (this.isExistEdge(item)) return;
+      try {
+        const linkRule = graph.get("defaultEdge").linkRule;
+        if (linkRule) {
+          let target = item;
+          let source = this.edge.getSource();
+          return linkRule(source, target);
+        }
+      } catch (e) {}
+    }
+
+    return true;
+  },
   onMouseup(ev: any) {
     const { graph, sourceNode } = this;
     const node = ev.item;
@@ -109,8 +121,8 @@ G6.registerBehavior("custom-node-link", {
       this.addingEdge = false;
     };
     if (this.addingEdge && this.edge) {
-      // 禁止自己连自己
-      if (!this.notSelf(ev) || !this.isExistEdge(node)) {
+      // 连接检查
+      if (!this.linkCheck(ev, "up")) {
         removEdge();
         return;
       }

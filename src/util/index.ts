@@ -21,3 +21,9 @@ document.addEventListener("keydown", event => {
 document.addEventListener("keyup", event => {
   keyMode = [];
 });
+
+export const formatData = function(data: any) {
+  data.nodes.forEach((node: any) => {
+    node.anchorText.forEach((item: any) => {});
+  });
+};

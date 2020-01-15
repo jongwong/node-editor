@@ -13,13 +13,13 @@ const data = {
     {
       id: "view",
       shape: "custom-node",
-      anchorPoints: [
-        /*  [0, 0.5],*/
-        [1, 0.5]
-      ],
       label: "view",
       icon: "\ue600",
-      size: [70, 30],
+      size: [100, 30],
+      anchorText: {
+        in: [],
+        out: [{ name: "" }]
+      },
       x: 700,
       y: 600
     },
@@ -28,7 +28,11 @@ const data = {
       label: "node 1",
       x: 325,
       y: 253,
-      data: { input: [], output: ["p1", "v1"] },
+      data: {},
+      anchorText: {
+        in: [{ name: "IN" }, { name: "p1" }],
+        out: [{ name: "OUT" }]
+      },
       shape: "custom-node"
     },
     {
@@ -129,9 +133,14 @@ const data = {
 
 export const graph = new G6.Graph({
   container: "container",
-  width: 1200,
+  width: 1920,
   height: 800,
   renderer: "svg",
+  defaultEdge: {
+    linkRule: function(source: any, target: any) {
+      return true;
+    }
+  },
   modes: {
     default: [
       {
@@ -155,15 +164,6 @@ export const graph = new G6.Graph({
     ]
   }
 });
-/*graph.on("node:mouseenter", evt => {
-  const { item } = evt;
-  graph.setItemState(item, "hover", true);
-});
-graph.on("node:mouseleave", evt => {
-  const { item } = evt;
-  graph.clearItemStates(item, "hover");
-});*/
-
 graph.on("node-select-change", (ev: any) => {
   let { targets } = ev;
   let { nodes, edges } = targets;

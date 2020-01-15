@@ -90,7 +90,6 @@ G6.registerBehavior("custom-brush-select", {
     let edges = graph.findAllByState("edge", "selected");
     edges.forEach((item: any) => {
       const style = item.getStateStyle("selected");
-      console.log(style);
       this.clearState(item);
     });
     this.selectedNodes = [];
