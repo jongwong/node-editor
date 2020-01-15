@@ -10,7 +10,7 @@ G6.registerBehavior("custom-node-select", {
       "canvas:click": "onCanvasClick"
     };
   },
-  nodeCache: [],
+  itemCache: { nodes: [], edges: [] },
   clearState: (item: any) => {
     try {
       if (item.hasState("selected")) {
@@ -19,12 +19,25 @@ G6.registerBehavior("custom-node-select", {
     } catch (e) {}
   },
   clearAll() {
-    if (this.nodeCache.length > 0) {
-      this.nodeCache.forEach((node: any) => {
+    if (this.itemCache.nodes.length > 0) {
+      this.itemCache.nodes.forEach((node: any) => {
         this.clearState(node);
       });
     }
-    this.nodeCache = [];
+    if (this.itemCache.edges.length > 0) {
+      this.itemCache.edges.forEach((node: any) => {
+        this.clearState(node);
+      });
+    }
+
+    this.itemCache = { nodes: [], edges: [] };
+    graph.emit("node-select-change", {
+      targets: {
+        nodes: [],
+        edges: []
+      },
+      select: true
+    });
   },
   onCanvasClick(ev: any) {
     this.clearAll();
@@ -42,31 +55,31 @@ G6.registerBehavior("custom-node-select", {
     }
     const state = item.hasState("selected");
     let keyCache = graph.get("keyCache");
-
+    let type = item.getType();
     if (keyCache.includes("Shift")) {
       if (state) {
         graph.clearItemStates(item, "selected");
 
-        this.nodeCache = this.nodeCache.filter((node: any) => {
+        this.itemCache = this.itemCache[type + "s"].filter((node: any) => {
           return node._cfg.id === item._cfg.id;
         });
       } else {
         graph.setItemState(item, "selected", true);
-        this.nodeCache.push(item);
+        this.itemCache[type + "s"].push(item);
       }
     } else {
       this.clearAll();
       if (state) {
         graph.clearItemStates(item, "selected");
       } else {
-        this.nodeCache.push(item);
+        this.itemCache[type + "s"].push(item);
         graph.setItemState(item, "selected", true);
       }
     }
     graph.emit("node-select-change", {
       targets: {
-        nodes: this.nodeCache,
-        edges: []
+        nodes: this.itemCache.nodes,
+        edges: this.itemCache.edges
       },
       select: true
     });

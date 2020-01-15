@@ -192,25 +192,27 @@ graph.set("keyCache", []);
 graph.on("node-select-change", (ev: any) => {
   let { targets } = ev;
   let { nodes, edges } = targets;
-  graph.on("keyup", (ev: any) => {
-    let { key } = ev;
-    if (key === "Delete" && nodes.length > 0) {
-      nodes.forEach((item: any) => {
-        try {
-          if (item.getModel().id !== "view") {
-            graph.removeItem(item);
-          }
-        } catch (e) {}
-      });
-      edges.forEach((item: any) => {
-        try {
-          if (item.getModel().id !== "view") {
-            graph.removeItem(item);
-          }
-        } catch (e) {}
-      });
-    }
-  });
+  graph.set("selectCache", { nodes, edges });
+});
+graph.on("keyup", (ev: any) => {
+  let { key } = ev;
+  if (key === "Delete") {
+    let { nodes, edges } = graph.get("selectCache");
+    nodes.forEach((item: any) => {
+      try {
+        if (item.getModel().id !== "view") {
+          graph.removeItem(item);
+        }
+      } catch (e) {}
+    });
+    edges.forEach((item: any) => {
+      try {
+        if (item.getModel().id !== "view") {
+          graph.removeItem(item);
+        }
+      } catch (e) {}
+    });
+  }
 });
 graph.data(data);
 graph.render();

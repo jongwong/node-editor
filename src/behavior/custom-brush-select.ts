@@ -93,6 +93,16 @@ G6.registerBehavior("custom-brush-select", {
       this.clearState(item);
     });
     this.selectedNodes = [];
+    if (this.dragging) {
+      graph.emit("node-select-change", {
+        targets: {
+          nodes: [],
+          edges: []
+        },
+        select: true
+      });
+    }
+    this.dragging = false;
   },
   setStateAll() {
     if (this.selectedNodes.length > 0) {
@@ -146,7 +156,7 @@ G6.registerBehavior("custom-brush-select", {
     this.clearStateAll();
     this._getSelectedNodes(ev);
     this.setStateAll();
-    this.dragging = false;
+
     this._clearBrush();
     this.graph.paint();
     graph.setAutoPaint(autoPaint);
