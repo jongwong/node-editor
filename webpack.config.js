@@ -1,46 +1,10 @@
-const { resolve } = require("path");
+const { merge } = require('webpack-merge');
 
-const HtmlWebpackPlugin = require('html-webpack-plugin');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-const  path = require('path');
-module.exports = function(env) {
-  let config = {
-    entry: {
-      index: "./src/index.ts",
-    },
-    output: {
-      path: resolve("./dist"),
-      filename: "[name].bundle.js"
-    },
-    mode: env.NODE_ENV,
-    watch: env.NODE_ENV == "development",
-    devtool: env.NODE_ENV == "development" ? "inline-source-map" : undefined,
-    resolve: {
-      extensions: [".ts", ".js"],
-      alias: {
-        "@": resolve(__dirname, "src")
-      }
-    },
-    module: {
-      rules: [{ test: /\.tsx?$/, use: [{
-          loader: 'ts-loader',
-          options: {
-            configFile: resolve(__dirname,'./tsconfig.json')
-          }
-        }] }]
-    },
-    plugins: [
-      new CleanWebpackPlugin(),
-        new HtmlWebpackPlugin({
-          template: path.resolve('./src/index.html'),
-          filename: 'index.html' })
-    ],
-    devServer: {
-      contentBase: path.join(__dirname, "dist"),
-      compress: true,
-      port: 9000,
-      hot:true
-    }
-  };
-  return config;
+module.exports = ({ WEBPACK_SERVE, APP_ENV, NODE_ENV }) => {
+	console.log('环境变量', WEBPACK_SERVE, APP_ENV, NODE_ENV);
+	process.env.NODE_ENV = NODE_ENV;
+	process.env.APP_ENV = APP_ENV || 'prod';
+	const commonConfig = require('./config/webpack.common.js');
+	const envConfig = require(`./config/webpack.${NODE_ENV}.js`); // 引入开发环境或生产环境配置
+	return merge(commonConfig, envConfig);
 };

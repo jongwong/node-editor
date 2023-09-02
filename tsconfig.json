@@ -1,16 +1,21 @@
 {
-  "compilerOptions": {
-    "target": "ES5",
-    "module": "ES6",
-    "allowJs": false,
-    "strict": true,
-    /*"declaration": true,*/
-    "inlineSourceMap": true,
-    "moduleResolution": "node",
-    "baseUrl": "./",
-    "paths": {
-      "@/*": ["src/*"]
-    },
-    "esModuleInterop": true
-  }
+	"compilerOptions": {
+		"baseUrl": ".",
+		"rootDir": "./",
+		"paths": {
+			"@/*": ["./src/*"],
+			"src/*": ["./src/*"],
+			"@public/*": ["./public/*"]
+		},
+		"module": "esnext",
+		"target": "esnext",
+		"lib": ["es6", "dom"],
+		"sourceMap": true,
+		"jsx": "react-jsx",
+		"moduleResolution": "node",
+		"strict": true,
+		"allowSyntheticDefaultImports": true
+	},
+	"include": ["./src/**/*", "./typings/**/*"],
+	"exclude": ["node_modules", "dist", "build"]
 }

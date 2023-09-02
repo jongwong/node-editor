@@ -1,0 +1,8 @@
+config/*
+webpack.config.js
+postcss.config.js
+.eslintrc.js
+.vite.config.js
+lib/esbuild/*
+node_modules/*
+src/lib/esbuild/utils/path-browserify/index.js
