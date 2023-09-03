@@ -1,0 +1,23 @@
+import React, { useState } from 'react';
+
+import { Form, Input } from 'antd';
+
+const { Item } = Form;
+interface DataType {
+	name?: string;
+	sex?: 1 | 2;
+	age?: number;
+	other?: Record<string, string>;
+}
+const Index = ():React.ReactNode => {
+	const [user, setUser] = useState<DataType>({});
+	return (
+		<Form>
+			<Item name="name" label="姓名">
+				<Input />
+			</Item>
+		</Form>
+	);
+};
+
+export default Index;

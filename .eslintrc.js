@@ -85,6 +85,8 @@ module.exports = {
 		'consistent-return': 'off',
 		'@typescript-eslint/no-explicit-any': 'off',
 		'react/no-unstable-nested-components': 'off',
+		'jsx-a11y/no-noninteractive-tabindex': 'off',
+		'jsx-a11y/tabindex-no-positive': 'off',
 	},
 	overrides: [],
 	settings: {

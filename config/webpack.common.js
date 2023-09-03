@@ -27,12 +27,15 @@ module.exports = {
 					{
 						test: /\.(ts|tsx)$/,
 						include: [path.resolve(__dirname, '../src')],
-						enforce: 'pre',
 						use: [/* 'thread-loader', */ 'babel-loader'],
+					},
+					{ test: /\.m?js/, resolve: { fullySpecified: false } },
+					{
+						test: /\.txt|\.raw\.tsx$/,
+						use: 'raw-loader',
 					},
 					{
 						test: /\.module\.(less|css)$/, //匹配所有的 less 文件
-						enforce: 'pre',
 						use: [
 							isDev ? 'style-loader' : MiniCssExtractPlugin.loader,
 
@@ -58,9 +61,10 @@ module.exports = {
 							},
 						],
 					},
+
 					{
 						test: /\.(less|css)$/, //匹配所有的 less 文件
-						enforce: 'pre',
+
 						use: [
 							isDev ? 'style-loader' : MiniCssExtractPlugin.loader,
 							{
@@ -134,6 +138,33 @@ module.exports = {
 			'@containers': path.resolve(__dirname, '../src/containers'),
 			'@public': path.resolve(__dirname, '../public'),
 		},
+		fallback: {
+			process: require.resolve('process/browser'),
+			buffer: require.resolve('buffer'),
+			// assert: require.resolve('assert'),
+			// buffer: require.resolve('buffer'),
+			// console: require.resolve('console-browserify'),
+			// constants: require.resolve('constants-browserify'),
+			// crypto: require.resolve('crypto-browserify'),
+			// domain: require.resolve('domain-browser'),
+			// events: require.resolve('events'),
+			// http: require.resolve('stream-http'),
+			// https: require.resolve('https-browserify'),
+			// os: require.resolve('os-browserify/browser'),
+			// path: require.resolve('path-browserify'),
+			// punycode: require.resolve('punycode'),
+			//
+			// querystring: require.resolve('querystring-es3'),
+			// stream: require.resolve('stream-browserify'),
+			// string_decoder: require.resolve('string_decoder'),
+			// sys: require.resolve('util'),
+			// timers: require.resolve('timers-browserify'),
+			// tty: require.resolve('tty-browserify'),
+			// url: require.resolve('url'),
+			// util: require.resolve('util'),
+			// vm: require.resolve('vm-browserify'),
+			// zlib: require.resolve('browserify-zlib'),
+		},
 	},
 	plugins: [
 		new webpack.DefinePlugin({
@@ -143,7 +174,10 @@ module.exports = {
 			template: path.resolve(__dirname, '../public/index.html'),
 			inject: true,
 		}),
-
+		new webpack.ProvidePlugin({
+			process: 'process/browser',
+			Buffer: ['buffer', 'Buffer'],
+		}),
 		new MiniCssExtractPlugin({
 			filename: '[name].css',
 			chunkFilename: '[name].css',

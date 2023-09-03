@@ -1,0 +1,7 @@
+import React, { useState } from 'react';
+interface DataType {
+  name?: string;
+  sex?: 1 | 2;
+  age?: number;
+  other?: Record<string, string>;
+}

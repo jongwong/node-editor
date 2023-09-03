@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 
-import { code1 } from '@/ASTEditor/code';
+import { code1 } from '@/ASTEditor/raw-code';
 import { toAst } from '@/ASTEditor/util';
 
 const ASTEditor: React.FC = props => {
