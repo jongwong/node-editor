@@ -56,6 +56,9 @@ dependencies:
   lodash:
     specifier: ^4.17.21
     version: 4.17.21
+  mitt:
+    specifier: ^3.0.1
+    version: 3.0.1
   monaco-editor:
     specifier: ~0.37.1
     version: 0.37.1
@@ -100,6 +103,12 @@ devDependencies:
   '@commitlint/config-conventional':
     specifier: ^17.6.3
     version: 17.6.3
+  '@types/babel__generator':
+    specifier: ^7.6.4
+    version: 7.6.4
+  '@types/babel__traverse':
+    specifier: ^7.20.1
+    version: 7.20.1
   '@types/deep-equal':
     specifier: ^1.0.1
     version: 1.0.1
@@ -211,12 +220,18 @@ devDependencies:
   friendly-errors-webpack-plugin:
     specifier: ^1.7.0
     version: 1.7.0(webpack@5.73.0)
+  generator:
+    specifier: link:@types/babel/generator
+    version: link:@types/babel/generator
   html-webpack-plugin:
     specifier: ^5.5.0
     version: 5.5.0(webpack@5.73.0)
   husky:
     specifier: ^8.0.0
     version: 8.0.0
+  i:
+    specifier: ^0.3.7
+    version: 0.3.7
   jsdom:
     specifier: ^21.1.2
     version: 21.1.2
@@ -238,6 +253,9 @@ devDependencies:
   monaco-editor-webpack-plugin:
     specifier: ^7.1.0
     version: 7.1.0(monaco-editor@0.37.1)(webpack@5.73.0)
+  npm:
+    specifier: ^10.0.0
+    version: 10.0.0
   optimize-css-assets-webpack-plugin:
     specifier: ^6.0.1
     version: 6.0.1(webpack@5.73.0)
@@ -289,6 +307,9 @@ devDependencies:
   thread-loader:
     specifier: ^4.0.1
     version: 4.0.1(webpack@5.73.0)
+  traverse:
+    specifier: link:@types/babel/traverse
+    version: link:@types/babel/traverse
   ts-loader:
     specifier: ^9.3.1
     version: 9.3.1(typescript@4.9.5)(webpack@5.73.0)
@@ -8337,6 +8358,11 @@ packages:
     hasBin: true
     dev: true
 
+  /i@0.3.7:
+    resolution: {integrity: sha512-FYz4wlXgkQwIPqhzC5TdNMLSE5+GS1IIDJZY/1ZiEPCT2S3COUVZeT5OW4BmW4r5LHLQuOosSwsvnroG9GR59Q==}
+    engines: {node: '>=0.4'}
+    dev: true
+
   /iconv-lite@0.4.24:
     resolution: {integrity: sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==}
     engines: {node: '>=0.10.0'}
@@ -10139,6 +10165,10 @@ packages:
   /minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
 
+  /mitt@3.0.1:
+    resolution: {integrity: sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==}
+    dev: false
+
   /mkdirp@0.5.6:
     resolution: {integrity: sha512-FP+p8RB8OWpF3YZBCrP5gtADmtXApB5AMLn+vdyA+PyxCjrCs00mjyUozssO33cwDeT3wNGdLxJ5M//YqtHAJw==}
     hasBin: true
@@ -10333,6 +10363,81 @@ packages:
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
     dependencies:
       path-key: 4.0.0
+
+  /npm@10.0.0:
+    resolution: {integrity: sha512-15O/VIG6/zuZ8ui2YxHhcJcomoTKNqC8bC6hKlmazJooDbdWCoC5iZsNp9Jm8xqwVab60hiAkhDyAqh8W8yq/g==}
+    engines: {node: ^18.17.0 || >=20.5.0}
+    hasBin: true
+    dev: true
+    bundledDependencies:
+      - '@isaacs/string-locale-compare'
+      - '@npmcli/arborist'
+      - '@npmcli/config'
+      - '@npmcli/fs'
+      - '@npmcli/map-workspaces'
+      - '@npmcli/package-json'
+      - '@npmcli/promise-spawn'
+      - '@npmcli/run-script'
+      - '@sigstore/tuf'
+      - abbrev
+      - archy
+      - cacache
+      - chalk
+      - ci-info
+      - cli-columns
+      - cli-table3
+      - columnify
+      - fastest-levenshtein
+      - fs-minipass
+      - glob
+      - graceful-fs
+      - hosted-git-info
+      - ini
+      - init-package-json
+      - is-cidr
+      - json-parse-even-better-errors
+      - libnpmaccess
+      - libnpmdiff
+      - libnpmexec
+      - libnpmfund
+      - libnpmhook
+      - libnpmorg
+      - libnpmpack
+      - libnpmpublish
+      - libnpmsearch
+      - libnpmteam
+      - libnpmversion
+      - make-fetch-happen
+      - minimatch
+      - minipass
+      - minipass-pipeline
+      - ms
+      - node-gyp
+      - nopt
+      - npm-audit-report
+      - npm-install-checks
+      - npm-package-arg
+      - npm-pick-manifest
+      - npm-profile
+      - npm-registry-fetch
+      - npm-user-validate
+      - npmlog
+      - p-map
+      - pacote
+      - parse-conflict-json
+      - proc-log
+      - qrcode-terminal
+      - read
+      - semver
+      - ssri
+      - supports-color
+      - tar
+      - text-table
+      - tiny-relative-date
+      - treeverse
+      - validate-npm-package-name
+      - which
+      - write-file-atomic
 
   /nth-check@1.0.2:
     resolution: {integrity: sha512-WeBOdju8SnzPN5vTUJYxYUxLeXpCaVP5i5e0LF8fg7WORF2Wd7wFX/pk0tYZk7s8T+J7VLy0Da6J1+wCT0AtHg==}

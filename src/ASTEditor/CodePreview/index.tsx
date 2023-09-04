@@ -7,10 +7,11 @@ import customGlobalRequire from './customGlobalRequire';
 type CodePreviewProps = {
 	files: any[];
 	demoId: string;
+	onPreviewReRender?: () => void;
 };
 
 const CodePreview: React.FC<CodePreviewProps> = props => {
-	const { files, demoId, ...rest } = props;
+	const { files, onPreviewReRender, demoId, ...rest } = props;
 	const { error, bundle, exports, Preview } = ReactLiveEditorPreview({
 		files,
 		demoId,
@@ -23,7 +24,13 @@ const CodePreview: React.FC<CodePreviewProps> = props => {
 			bundle(files);
 		}
 	}, [files]);
-	const renderPreview = () => (Preview ? <Preview /> : null);
+	const renderPreview = () => {
+		if (Preview) {
+			onPreviewReRender?.();
+		}
+
+		return Preview ? <Preview /> : null;
+	};
 	return (
 		<div>
 			<div>{error ? error?.message : null}</div>

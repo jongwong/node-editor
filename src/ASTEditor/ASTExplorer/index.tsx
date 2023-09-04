@@ -22,10 +22,11 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
 import CodePreview from '@/ASTEditor/CodePreview';
 import { code2 } from '@/ASTEditor/raw-code';
-import { toAst, transformCode1 } from '@/ASTEditor/util';
+import { addEditMark, generateCode, toAst, transformCode1 } from '@/ASTEditor/util';
 
 import './index.less';
 
+import AttributePanel from '@/ASTEditor/ASTExplorer/AttributePanel';
 import {
 	findKeyListByLoc,
 	getFormatAstJson,
@@ -33,6 +34,8 @@ import {
 	scrollToMarkJsonNode,
 	searchNode,
 } from './utils/json-node';
+import { findParentNode, isHoverTarget } from '@/ASTEditor/util/dom';
+import useLowCode from '@/ASTEditor/hooks/use-low-code';
 
 const HINT_CLASSNAME = 'monaco-find-ast-remark';
 const modalPath = 'ASTExplorer/default';
@@ -94,17 +97,14 @@ const Index: React.FC = props => {
 	const editorRef = useRef<monacoEditor.editor.IStandaloneCodeEditor>();
 	const newEditRef = useRef<monacoEditor.editor.IStandaloneCodeEditor>();
 	const monacoRef = useRef<typeof monacoEditor>();
+	const [dataMap, setDataMap] = useState({});
 	const transform = (e: string) => {
-		const ast = toAst(e);
+		const { output, transformDataMap: _transformDataMap, ast } = addEditMark(e);
+		setDataMap(_transformDataMap);
+		setTransformCode(output.code);
 		setAstJson(ast);
 	};
-	useEffect(() => {
-		// try {
-		// 	transform(code || '');
-		// } catch (e) {
-		// 	console.error(e);
-		// }
-	}, []);
+
 	const lastDecorationsRef = useRef<string[]>();
 
 	const { run: showKeyMark } = useDebounceFn(
@@ -235,9 +235,18 @@ const Index: React.FC = props => {
 		},
 		{ wait: 300 }
 	);
+	const [currentAttributeData, setCurrentAttributeData] = useState();
+	const previewEl = useRef<HTMLDivElement>();
+	const { reload } = useLowCode({
+		preElement: previewEl.current,
+		dataMap,
+		onComponentDoubleClick: e => {
+			setCurrentAttributeData(e.data);
+		},
+	});
 	return (
 		<div>
-			<div style={{ display: 'grid', gridTemplateColumns: '35% 60px 30% auto' }}>
+			<div style={{ display: 'grid', gridTemplateColumns: '35%  30% auto' }}>
 				<MonacoEditor
 					height="100vh"
 					width="100%"
@@ -256,31 +265,17 @@ const Index: React.FC = props => {
 					}}
 					onChange={e => {
 						setCode(e);
+
 						transform(e || '');
 					}}
 				/>
-				<div style={{ marginTop: '200px' }}>
-					<Button
-						type="primary"
-						onClick={() => {
-							const output = transformCode1(code);
-							setTransformCode(output.code);
-							const ast = toAst(output.code);
-
-							// setAstJson(ast);
-							setTransformModelCode(output.code);
-						}}
-					>
-						转换
-					</Button>
-				</div>
 				<div
 					onMouseLeave={() => {
 						clearMark();
-					}}
-				>
+					}}>
 					<Tabs
 						type="card"
+						destroyInactiveTabPane
 						onChange={e => {
 							clearMark();
 							if (e !== 'ast') {
@@ -288,8 +283,21 @@ const Index: React.FC = props => {
 									setTransformModelCode(code);
 								}, 100);
 							}
-						}}
-					>
+						}}>
+						<Tabs.TabPane key="attribute" tab="属性">
+							<div style={{ height: '100vh', overflow: 'scroll' }}>
+								<AttributePanel
+									code={transformCode}
+									data={currentAttributeData}
+									ast={astJson}
+									onChange={e => {
+										setAstJson(e);
+										const out = generateCode(e, transformCode);
+										setTransformCode(out.code);
+									}}
+								/>
+							</div>
+						</Tabs.TabPane>
 						<Tabs.TabPane key="ast" tab="ast">
 							<div style={{ height: '100vh', overflow: 'scroll' }}>
 								<Input
@@ -323,10 +331,12 @@ const Index: React.FC = props => {
 														checkKeyList(keyPath, cursorSelectionRangeKeyList) &&
 														'json-preview-is-include-selection'
 												)}
+												onDoubleClick={() => {
+													const val = get(astJson, cloneDeep(keyPath).reverse());
+												}}
 												onMouseEnter={() => {
 													showKeyMark(cloneDeep(keyPath) as any);
-												}}
-											>
+												}}>
 												{label}
 											</div>
 										);
@@ -334,31 +344,25 @@ const Index: React.FC = props => {
 								/>
 							</div>
 						</Tabs.TabPane>
-						<Tabs.TabPane key="code" tab="code">
+
+						<Tabs.TabPane key="code" tab="代码">
 							<div style={{ height: '100vh', overflow: 'scroll' }}>
-								<MonacoEditor
-									height="100vh"
-									width="100%"
-									language="typescript"
-									options={options}
-									editorDidMount={(_edit, m) => {
-										initOtherConfig(m);
-										newEditRef.current = _edit;
-										const _modal = setTransformModelCode(transformCode);
-										_edit.setModel(_modal);
-									}}
-								/>
+								<Input.TextArea value={transformCode} autoSize />
 							</div>
 						</Tabs.TabPane>
 					</Tabs>
 				</div>
 
-				<div className="right-panel">
-					<CodePreview
-						files={[{ filename: 'index.tsx', code: transformCode || code }]}
-						demoId="modalPath"
-					/>
-					<div />
+				<div className="right-panel" onDoubleClickCapture={e => {}}>
+					<div ref={previewEl as any}>
+						<CodePreview
+							onPreviewReRender={() => {
+								reload();
+							}}
+							files={[{ filename: 'index.tsx', code: transformCode }]}
+							demoId="modalPath"
+						/>
+					</div>
 				</div>
 			</div>
 		</div>
