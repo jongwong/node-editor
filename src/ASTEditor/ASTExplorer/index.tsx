@@ -20,13 +20,15 @@ import {
 import * as monacoEditor from 'monaco-editor';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
+import AttributePanel from '@/ASTEditor/ASTExplorer/AttributePanel';
 import CodePreview from '@/ASTEditor/CodePreview';
+import useLowCode from '@/ASTEditor/hooks/use-low-code';
 import { code2 } from '@/ASTEditor/raw-code';
-import { addEditMark, generateCode, toAst, transformCode1 } from '@/ASTEditor/util';
+import { addEditMark, generateCode, LowCodeContext, toAst, transformCode1 } from '@/ASTEditor/util';
+import { findParentNode, isHoverTarget } from '@/ASTEditor/util/dom';
 
 import './index.less';
 
-import AttributePanel from '@/ASTEditor/ASTExplorer/AttributePanel';
 import {
 	findKeyListByLoc,
 	getFormatAstJson,
@@ -34,8 +36,6 @@ import {
 	scrollToMarkJsonNode,
 	searchNode,
 } from './utils/json-node';
-import { findParentNode, isHoverTarget } from '@/ASTEditor/util/dom';
-import useLowCode from '@/ASTEditor/hooks/use-low-code';
 
 const HINT_CLASSNAME = 'monaco-find-ast-remark';
 const modalPath = 'ASTExplorer/default';
@@ -211,6 +211,7 @@ const Index: React.FC = props => {
 		);
 	};
 
+	const [curAttributeValues, setCurAttributeValues] = useState({});
 	const [cursorSelectionRangeKeyList, setCursorSelectionRangeKeyList] = useState([]);
 	const { run: onCursorSelection } = useDebounceFn(
 		e => {
@@ -235,14 +236,11 @@ const Index: React.FC = props => {
 		},
 		{ wait: 300 }
 	);
-	const [currentAttributeData, setCurrentAttributeData] = useState();
+	const [currentItemId, setCurrentItemId] = useState();
 	const previewEl = useRef<HTMLDivElement>();
 	const { reload } = useLowCode({
 		preElement: previewEl.current,
 		dataMap,
-		onComponentDoubleClick: e => {
-			setCurrentAttributeData(e.data);
-		},
 	});
 	return (
 		<div>
@@ -269,91 +267,104 @@ const Index: React.FC = props => {
 						transform(e || '');
 					}}
 				/>
-				<div
-					onMouseLeave={() => {
-						clearMark();
-					}}>
-					<Tabs
-						type="card"
-						destroyInactiveTabPane
-						onChange={e => {
+				<LowCodeContext.Provider
+					value={{
+						dataMap,
+						onComponentDoubleClick: (uuid, { data, proxyProps }) => {
+							setCurrentItemId(uuid);
+							setCurAttributeValues(proxyProps);
+						},
+					}}
+				>
+					<div
+						className="right-panel"
+						onMouseLeave={() => {
 							clearMark();
-							if (e !== 'ast') {
-								setTimeout(() => {
-									setTransformModelCode(code);
-								}, 100);
-							}
-						}}>
-						<Tabs.TabPane key="attribute" tab="属性">
-							<div style={{ height: '100vh', overflow: 'scroll' }}>
-								<AttributePanel
-									code={transformCode}
-									data={currentAttributeData}
-									ast={astJson}
-									onChange={e => {
-										setAstJson(e);
-										const out = generateCode(e, transformCode);
-										setTransformCode(out.code);
-									}}
-								/>
-							</div>
-						</Tabs.TabPane>
-						<Tabs.TabPane key="ast" tab="ast">
-							<div style={{ height: '100vh', overflow: 'scroll' }}>
-								<Input
-									value={searchNodeStr}
-									onChange={e => {
-										setSearchNodeStr(e.target.value);
-									}}
-								/>
-								<JSONTree
-									data={getFormatAstJson(
-										astJson,
-										cursorSelectionRangeKeyList?.length
-											? cursorSelectionRangeKeyList
-											: searchKeysList
-									)}
-									theme={theme}
-									hideRoot
-									shouldExpandNodeInitially={(keyPath, data, level) => level <= 5}
-									labelRenderer={(keyPath: any) => {
-										const label = `"${keyPath[0]}"`;
+						}}
+					>
+						<Tabs
+							type="card"
+							destroyInactiveTabPane
+							onChange={e => {
+								clearMark();
+								if (e !== 'ast') {
+									setTimeout(() => {
+										setTransformModelCode(code);
+									}, 100);
+								}
+							}}
+						>
+							<Tabs.TabPane key="attribute" tab="属性">
+								<div style={{ height: '100vh', overflow: 'scroll' }}>
+									<AttributePanel
+										code={transformCode}
+										ast={astJson}
+										currentItemId={currentItemId}
+										onGetAttributeValues={() => curAttributeValues}
+										onChange={e => {
+											setAstJson(e);
+											const out = generateCode(e, transformCode);
+											setTransformCode(out.code);
+										}}
+									/>
+								</div>
+							</Tabs.TabPane>
+							<Tabs.TabPane key="ast" tab="ast">
+								<div style={{ height: '100vh', overflow: 'scroll' }}>
+									<Input
+										value={searchNodeStr}
+										onChange={e => {
+											setSearchNodeStr(e.target.value);
+										}}
+									/>
+									<JSONTree
+										data={getFormatAstJson(
+											astJson,
+											cursorSelectionRangeKeyList?.length
+												? cursorSelectionRangeKeyList
+												: searchKeysList
+										)}
+										theme={theme}
+										hideRoot
+										shouldExpandNodeInitially={(keyPath, data, level) => level <= 5}
+										labelRenderer={(keyPath: any) => {
+											const label = `"${keyPath[0]}"`;
 
-										const _isSearch = checkKeyList(keyPath, searchKeysList);
-										return (
-											<div
-												onMouseLeave={() => {
-													clearMark();
-												}}
-												className={classNames(
-													_isSearch && 'json-tree-find-active',
-													!_isSearch &&
-														checkKeyList(keyPath, cursorSelectionRangeKeyList) &&
-														'json-preview-is-include-selection'
-												)}
-												onDoubleClick={() => {
-													const val = get(astJson, cloneDeep(keyPath).reverse());
-												}}
-												onMouseEnter={() => {
-													showKeyMark(cloneDeep(keyPath) as any);
-												}}>
-												{label}
-											</div>
-										);
-									}}
-								/>
-							</div>
-						</Tabs.TabPane>
+											const _isSearch = checkKeyList(keyPath, searchKeysList);
+											return (
+												<div
+													onMouseLeave={() => {
+														clearMark();
+													}}
+													className={classNames(
+														_isSearch && 'json-tree-find-active',
+														!_isSearch &&
+															checkKeyList(keyPath, cursorSelectionRangeKeyList) &&
+															'json-preview-is-include-selection'
+													)}
+													onDoubleClick={() => {
+														const val = get(astJson, cloneDeep(keyPath).reverse());
+														console.log('======val====>', val);
+													}}
+													onMouseEnter={() => {
+														showKeyMark(cloneDeep(keyPath) as any);
+													}}
+												>
+													{label}
+												</div>
+											);
+										}}
+									/>
+								</div>
+							</Tabs.TabPane>
 
-						<Tabs.TabPane key="code" tab="代码">
-							<div style={{ height: '100vh', overflow: 'scroll' }}>
-								<Input.TextArea value={transformCode} autoSize />
-							</div>
-						</Tabs.TabPane>
-					</Tabs>
-				</div>
-
-				<div className="right-panel" onDoubleClickCapture={e => {}}>
+							<Tabs.TabPane key="code" tab="代码">
+								<div style={{ height: '100vh', overflow: 'scroll' }}>
+									<Input.TextArea value={transformCode} autoSize />
+								</div>
+							</Tabs.TabPane>
+						</Tabs>
+					</div>
 					<div ref={previewEl as any}>
 						<CodePreview
 							onPreviewReRender={() => {
@@ -363,7 +374,7 @@ const Index: React.FC = props => {
 							demoId="modalPath"
 						/>
 					</div>
-				</div>
+				</LowCodeContext.Provider>
 			</div>
 		</div>
 	);

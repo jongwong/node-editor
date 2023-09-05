@@ -20,6 +20,11 @@ const routes: RouteConfig[] = [
 		component: ASTExplorer,
 		routes: [],
 	},
+	{
+		path: '/',
+		component: ASTExplorer,
+		routes: [],
+	},
 ];
 
 export default routes;

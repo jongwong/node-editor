@@ -10,14 +10,6 @@ const materialStore = {
 		},
 		{
 			name: 'Item',
-			condition: path => {
-				if (path.node?.name?.name === 'Item') {
-					return {
-						valid: true,
-						markType: 10,
-					};
-				}
-			},
 			attribute: [
 				{
 					name: 'label',
@@ -35,14 +27,7 @@ const materialStore = {
 		},
 		{
 			name: 'Button',
-			condition: path => {
-				if (path.node?.name?.name === 'Button') {
-					return {
-						valid: true,
-						markType: 10,
-					};
-				}
-			},
+			display: 'inline',
 			attribute: [
 				{
 					name: 'type',
@@ -75,14 +60,6 @@ const materialStore = {
 		},
 		{
 			name: 'Input',
-			condition: path => {
-				if (path.node?.name?.name === 'Input') {
-					return {
-						valid: true,
-						markType: 10,
-					};
-				}
-			},
 			attribute: [
 				{
 					name: 'placeholder',

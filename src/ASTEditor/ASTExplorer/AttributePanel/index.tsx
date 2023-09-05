@@ -1,10 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useContext, useEffect, useMemo, useRef } from 'react';
 
-import { Button, Form, Input, Radio, Select } from 'antd';
-
-import { forIn, set, values } from 'lodash';
 import { useUpdate } from 'ahooks';
-import { findNodeByUid } from '@/ASTEditor/util';
+import { Button, Form, Input, Radio, Select } from 'antd';
+import { forEach, forIn, set, values } from 'lodash';
+
+import { findNodeByUid, LowCodeContext } from '@/ASTEditor/util';
 
 const { Item } = Form;
 const valueTypeMap = {
@@ -34,29 +34,34 @@ type AttributePanelProps = {
 	code: string;
 	ast: any;
 	onChange: (e: any) => void;
-	data?: string;
+	currentItemId?: string;
+	onGetAttributeValues: () => any;
 };
 const AttributePanel: React.FC<AttributePanelProps> = props => {
-	const { code, onChange, ast, data, ...rest } = props;
+	const { code, onGetAttributeValues, onChange, currentItemId, ast, ...rest } = props;
 	const [form] = Form.useForm();
+	const { dataMap } = useContext(LowCodeContext);
+	const data = useMemo(
+		() => (dataMap[currentItemId] ? dataMap[currentItemId] : {}),
+		[dataMap, currentItemId]
+	);
 	const forceUpdate = useUpdate();
 	const oldValueMap = useRef({});
 	useEffect(() => {
 		form.resetFields();
-		let map = {};
-		forIn(data?.attributeValueMap || {}, (it, key) => {
+		const map = onGetAttributeValues();
+		forEach(data?.config?.attribute || [], (it, idx) => {
 			const ob = {
-				name: key,
-				value: it.getValue(),
+				name: it.name,
+				value: map[it.name],
 			};
-			map[key] = ob.value;
 			form.setFields([ob]);
 		});
 		oldValueMap.current = map;
 		forceUpdate();
-	}, [data]);
+	}, [currentItemId, data]);
 
-	const attribute = data?.materialData?.attribute || [];
+	const attribute = data?.config?.attribute || [];
 	const getRender = it => {
 		if (it.valueEnum) {
 			const op = values(it.valueEnum);
@@ -84,7 +89,8 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 							}
 						});
 						onChange?.(ast);
-					}}>
+					}}
+				>
 					保存
 				</Button>
 			</Item>

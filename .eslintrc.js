@@ -6,7 +6,6 @@ module.exports = {
 		es2021: true,
 	},
 	extends: [
-		'airbnb',
 		'eslint:recommended',
 		'plugin:react/recommended',
 		'plugin:@typescript-eslint/recommended',
@@ -33,7 +32,6 @@ module.exports = {
 	},
 
 	rules: {
-		'no-unused-vars': 'warn',
 		'no-use-before-define': 'off',
 		'react/jsx-filename-extension': ['error', { extensions: ['.js', '.jsx', '.ts', '.tsx'] }],
 		'simple-import-sort/imports': [
@@ -111,9 +109,6 @@ module.exports = {
 			 *  'static': resolve('static')
 			 * }
 			 */
-			webpack: {
-				config: 'config/webpack.common.js',
-			},
 			// alias: {
 			// 	'@': resolve('src'),
 			// 	src: resolve('src'),
