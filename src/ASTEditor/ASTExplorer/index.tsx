@@ -24,7 +24,14 @@ import AttributePanel from '@/ASTEditor/ASTExplorer/AttributePanel';
 import CodePreview from '@/ASTEditor/CodePreview';
 import useLowCode from '@/ASTEditor/hooks/use-low-code';
 import { code2 } from '@/ASTEditor/raw-code';
-import { addEditMark, generateCode, LowCodeContext, toAst, transformCode1 } from '@/ASTEditor/util';
+import {
+	addEditMark,
+	generateCode,
+	LowCodeContext,
+	removeEditMark,
+	toAst,
+	transformCode1,
+} from '@/ASTEditor/util';
 import { findParentNode, isHoverTarget } from '@/ASTEditor/util/dom';
 
 import './index.less';
@@ -304,6 +311,8 @@ const Index: React.FC = props => {
 										onChange={e => {
 											setAstJson(e);
 											const out = generateCode(e, transformCode);
+											const formatCodeOutput = removeEditMark(out.code);
+											// setModelCode(formatCodeOutput.code);
 											setTransformCode(out.code);
 										}}
 									/>

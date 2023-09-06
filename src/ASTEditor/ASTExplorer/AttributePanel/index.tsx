@@ -80,15 +80,19 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 				<Button
 					type="primary"
 					onClick={() => {
-						let newAst = ast;
-						forIn(data?.attributeValueMap || {}, (it, key) => {
-							const val = form.getFieldValue(key);
-
-							if (val?.toString() !== oldValueMap.current[key]?.toString()) {
-								newAst = it.updateValue(newAst, val);
+						const ob = {};
+						forEach(attribute || [], (it, key) => {
+							const val = form.getFieldValue(it.name);
+							if (form.isFieldTouched(it.name)) {
+								ob[it.name] = val;
 							}
 						});
-						onChange?.(ast);
+						if (Object.keys(ob).length) {
+							const newAst = data?.event?.updateAttributeValue(ast, ob);
+							if (newAst) {
+								onChange?.(newAst);
+							}
+						}
 					}}
 				>
 					保存

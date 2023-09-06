@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-import { ReactLiveEditorPreview } from '@pupu/react-live-editor';
+import { ReactLiveEditorPreview } from '@jongwong/react-live-editor';
 
 import customGlobalRequire from './customGlobalRequire';
 
