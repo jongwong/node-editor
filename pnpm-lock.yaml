@@ -89,6 +89,7 @@ specifiers:
   react-dev-utils: ^12.0.1
   react-dom: ^18.2.0
   react-json-tree: ^0.18.0
+  react-monaco-editor: ^0.54.0
   react-router: ^5.3.4
   react-router-config: ^5.1.1
   react-router-dom: ^5.3.4
@@ -208,6 +209,7 @@ devDependencies:
   process: 0.11.10
   raw-loader: 4.0.2_webpack@5.88.2
   react-dev-utils: 12.0.1_fagwa7loim2eawu5kaegsnn4bi
+  react-monaco-editor: 0.54.0_e7kkjen5qdzupl7m7tmfvqtqkm
   react-router-dom: 5.3.4_react@18.2.0
   react-scripts: 5.0.1_uwjyq6hfump5nftr25qwn5j5xq
   style-loader: 3.3.3_webpack@5.88.2
@@ -12645,6 +12647,19 @@ packages:
       prop-types: 15.8.1
       react: 18.2.0
     dev: false
+
+  /react-monaco-editor/0.54.0_e7kkjen5qdzupl7m7tmfvqtqkm:
+    resolution: {integrity: sha512-9JwO69851mfpuhYLHlKbae7omQWJ/2ICE2lbL0VHyNyZR8rCOH7440u+zAtDgiOMpLwmYdY1sEZCdRefywX6GQ==}
+    peerDependencies:
+      '@types/react': '>=16 <= 18'
+      monaco-editor: ^0.39.0
+      react: '>=16 <= 18'
+    dependencies:
+      '@types/react': 18.2.21
+      monaco-editor: 0.37.1
+      prop-types: 15.8.1
+      react: 18.2.0
+    dev: true
 
   /react-refresh/0.11.0:
     resolution: {integrity: sha512-F27qZr8uUqwhWZboondsPx8tnC3Ct3SxZA3V5WyEvujRyyNv0VYPhoBg1gZ8/MV5tubQp76Trw8lTv9hzRBa+A==}

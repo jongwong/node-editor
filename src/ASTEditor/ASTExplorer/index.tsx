@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { JSONTree } from 'react-json-tree';
-import MonacoEditor from 'react-monaco-editor/lib/editor';
+import MonacoEditor from 'react-monaco-editor';
 
 import { useDebounce, useDebounceFn } from 'ahooks';
 import { Button, Input, Tabs } from 'antd';
