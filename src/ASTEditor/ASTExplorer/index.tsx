@@ -19,6 +19,7 @@ import {
 } from 'lodash';
 import * as monacoEditor from 'monaco-editor';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
+import prettier, { BuiltInParsers, Options } from 'prettier';
 
 import AttributePanel from '@/ASTEditor/ASTExplorer/AttributePanel';
 import CodePreview from '@/ASTEditor/CodePreview';
@@ -28,9 +29,9 @@ import {
 	addEditMark,
 	generateCode,
 	LowCodeContext,
+	prettierFormat,
 	removeEditMark,
 	toAst,
-	transformCode1,
 } from '@/ASTEditor/util';
 import { findParentNode, isHoverTarget } from '@/ASTEditor/util/dom';
 
@@ -91,7 +92,7 @@ const theme = {
 const Index: React.FC = props => {
 	const { ...rest } = props;
 
-	const [code, setCode] = useState(code2 || '');
+	const [code, setCode] = useState(prettierFormat(code2 || ''));
 	const [transformCode, setTransformCode] = useState('');
 	const [astJson, _setAstJson] = useState({});
 	const astJsonRef = useRef({});
@@ -249,6 +250,7 @@ const Index: React.FC = props => {
 		preElement: previewEl.current,
 		dataMap,
 	});
+	const monacoChangeLock = useRef(false);
 	return (
 		<div>
 			<div style={{ display: 'grid', gridTemplateColumns: '35%  30% auto' }}>
@@ -269,6 +271,10 @@ const Index: React.FC = props => {
 						});
 					}}
 					onChange={e => {
+						if (monacoChangeLock.current) {
+							monacoChangeLock.current = false;
+							return;
+						}
 						setCode(e);
 
 						transform(e || '');
@@ -277,8 +283,10 @@ const Index: React.FC = props => {
 				<LowCodeContext.Provider
 					value={{
 						dataMap,
+						currentItemId,
 						onComponentDoubleClick: (uuid, { data, proxyProps }) => {
 							setCurrentItemId(uuid);
+
 							setCurAttributeValues(proxyProps);
 						},
 					}}
@@ -309,11 +317,13 @@ const Index: React.FC = props => {
 										currentItemId={currentItemId}
 										onGetAttributeValues={() => curAttributeValues}
 										onChange={e => {
+											monacoChangeLock.current = true;
 											setAstJson(e);
 											const out = generateCode(e, transformCode);
-											const formatCodeOutput = removeEditMark(out.code);
-											// setModelCode(formatCodeOutput.code);
-											setTransformCode(out.code);
+											const _code = prettierFormat(out.code);
+											const formatCodeOutput = removeEditMark(_code);
+											setModelCode(prettierFormat(formatCodeOutput.code));
+											setTransformCode(_code);
 										}}
 									/>
 								</div>

@@ -54,7 +54,10 @@ const materialStore = {
 							text: 'text',
 						},
 					},
-					type: 'JSXAttribute',
+				},
+				{
+					name: 'danger',
+					valueType: 'bool',
 				},
 			],
 		},

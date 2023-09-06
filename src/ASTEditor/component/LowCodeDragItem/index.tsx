@@ -1,10 +1,9 @@
 import React, { useContext, useRef } from 'react';
 
-import { cloneDeep, forEach } from 'lodash';
+import classNames from 'classnames';
 
 import { EOperationClassName } from '@/ASTEditor/constants';
 import { LowCodeContext } from '@/ASTEditor/util';
-import { findParentNode, isHoverTarget } from '@/ASTEditor/util/dom';
 import { addClassName, removeClassName } from '@/ASTEditor/util/dom/class-operation';
 import { hasClassName } from '@/util';
 
@@ -14,12 +13,15 @@ type LowCodeDragItemProps = {
 };
 const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 	const { lowCodeItemUId: uuid, ...rest } = props;
-	const { dataMap, onComponentDoubleClick } = useContext(LowCodeContext);
+	const { dataMap, onComponentDoubleClick, currentItemId } = useContext(LowCodeContext);
 	const curData = dataMap?.[uuid];
 	const elRef = useRef<HTMLElement | undefined>();
 	return (
 		<div
-			className={'low-code-target-item'}
+			className={classNames(
+				'low-code-target-item',
+				currentItemId === uuid && 'low-code-target-item__select'
+			)}
 			ref={elRef}
 			style={{ display: curData?.materialData?.display || 'block' }}
 			onDoubleClick={e => {
@@ -51,3 +53,4 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 	);
 };
 export default LowCodeDragItem;
+window.LowCodeDragItem = LowCodeDragItem;

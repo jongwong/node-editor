@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 
 import { Form, Input, Button } from 'antd';
-import { LowCodeDragItem } from '@yoo/low-code';
 
 const { Item } = Form;
 

@@ -3,32 +3,26 @@ import { createContext } from 'react';
 import generate from '@babel/generator';
 import { parse } from '@babel/parser';
 import traverse from '@babel/traverse';
-import {
-	assertJSX,
-	isIdentifier,
-	isImportDeclaration,
-	isImportOrExportDeclaration,
-	isJSX,
-	isJSXAttribute,
-	isModuleSpecifier,
-	JSX,
-	jsxAttribute,
-	jsxIdentifier,
-	Node,
-	StringLiteral,
-	stringLiteral,
-} from '@babel/types';
+import { isJSX, jsxAttribute, jsxIdentifier, stringLiteral } from '@babel/types';
 import { forEach, forEachRight, forIn, isArray, isObject, set } from 'lodash';
+import prettier, { BuiltInParsers, Options } from 'prettier';
 import { v4 as uuid } from 'uuid';
 
 import materialStore from '@/ASTEditor/ASTExplorer/material-store';
 import {
-	getJSXElementAttributesValue,
 	getJSXElementName,
 	getValueLiteral,
 	updateAttribute,
 	wrapperJSXElement,
 } from '@/ASTEditor/util/ast-node';
+
+export const prettierFormat = (code: string) => {
+	return prettier.format(code, {
+		parser: (text: string, parsers: BuiltInParsers, options: Options) => {
+			return toAst(text);
+		},
+	});
+};
 
 export const toAst = (code: string) => {
 	const ast = parse(code, { sourceType: 'module', plugins: ['typescript', 'jsx'] });
