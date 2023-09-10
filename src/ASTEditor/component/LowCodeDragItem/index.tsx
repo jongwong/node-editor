@@ -55,7 +55,7 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 				dragRef(e);
 			}}
 			style={{
-				display: curData?.materialData?.display || 'block',
+				display: curData?.config?.display || 'inline',
 				opacity: isDragging ? '0' : 'unset',
 				overflow: isDragging || isSelect ? 'auto' : undefined,
 			}}
