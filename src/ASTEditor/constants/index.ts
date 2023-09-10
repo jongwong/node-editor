@@ -6,3 +6,6 @@ export enum EOperationClassName {
 export enum EOperationAttributeName {
 	UUId = 'low-code-uuid',
 }
+export const EDragItemType = {
+	LowCodeDragItem: 'LowCodeDragItem',
+};

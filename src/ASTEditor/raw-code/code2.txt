@@ -14,20 +14,19 @@ interface DataType {
 const Index = (): React.ReactNode => {
 	const [user, setUser] = useState<DataType>({});
 	return (
-		<Form>
-			<Item>
-
+		<div>
+			<Form>
 					<Item name="name" label="姓名">
 						<Input />
 					</Item>
-				<Item name="age" label="年龄" required={true}>
-					<Input />
-				</Item>
-				<Item>
-					<Button>提交</Button>
-				</Item>
-			</Item>
-		</Form>
+					<Item name="age" label="年龄" required={true}>
+						<Input />
+					</Item>
+					<Item>
+						<Button>提交</Button>
+					</Item>
+			</Form>
+		</div>
 	);
 };
 

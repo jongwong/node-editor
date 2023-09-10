@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { DndProvider, useDragLayer } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import { JSONTree } from 'react-json-tree';
 import MonacoEditor from 'react-monaco-editor';
 
@@ -19,7 +21,6 @@ import {
 } from 'lodash';
 import * as monacoEditor from 'monaco-editor';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
-import prettier, { BuiltInParsers, Options } from 'prettier';
 
 import AttributePanel from '@/ASTEditor/ASTExplorer/AttributePanel';
 import CodePreview from '@/ASTEditor/CodePreview';
@@ -33,7 +34,6 @@ import {
 	removeEditMark,
 	toAst,
 } from '@/ASTEditor/util';
-import { findParentNode, isHoverTarget } from '@/ASTEditor/util/dom';
 
 import './index.less';
 
@@ -250,151 +250,165 @@ const Index: React.FC = props => {
 		preElement: previewEl.current,
 		dataMap,
 	});
+	const changeAst = e => {
+		monacoChangeLock.current = true;
+
+		const out = generateCode(e, transformCode);
+		const _code = prettierFormat(out.code);
+
+		const formatCodeOutput = removeEditMark(_code);
+		setModelCode(prettierFormat(formatCodeOutput.code));
+		setTransformCode(_code);
+	};
 	const monacoChangeLock = useRef(false);
+	const [hoverItemIdMap, setHoverItemMap] = useState({});
 	return (
 		<div>
-			<div style={{ display: 'grid', gridTemplateColumns: '35%  30% auto' }}>
-				<MonacoEditor
-					height="100vh"
-					width="100%"
-					language="typescript"
-					options={options}
-					editorDidMount={(_edit, m) => {
-						editorRef.current = _edit;
-						monacoRef.current = m;
-						initOtherConfig(m);
-						const _modal = setModelCode();
-						_edit.setModel(_modal);
+			<LowCodeContext.Provider
+				value={{
+					dataMap,
+					currentItemId,
+					onComponentDoubleClick: (uuid, { data, proxyProps }) => {
+						setCurrentItemId(uuid);
 
-						_edit.onDidChangeCursorSelection(e => {
-							onCursorSelection(e?.selection);
-						});
-					}}
-					onChange={e => {
-						if (monacoChangeLock.current) {
-							monacoChangeLock.current = false;
-							return;
-						}
-						setCode(e);
+						setCurAttributeValues(proxyProps);
+					},
+					onAstChange: changeAst,
+					astJson: astJson,
+					hoverItemIdMap,
+					onItemHover: (uuid, e) => {
+						setHoverItemMap(old => ({ ...old, uuid: e }));
+					},
+				}}
+			>
+				<DndProvider backend={HTML5Backend}>
+					<div style={{ display: 'grid', gridTemplateColumns: '35%  30% auto' }}>
+						<MonacoEditor
+							height="100vh"
+							width="100%"
+							language="typescript"
+							options={options}
+							editorDidMount={(_edit, m) => {
+								editorRef.current = _edit;
+								monacoRef.current = m;
+								initOtherConfig(m);
+								const _modal = setModelCode();
+								_edit.setModel(_modal);
 
-						transform(e || '');
-					}}
-				/>
-				<LowCodeContext.Provider
-					value={{
-						dataMap,
-						currentItemId,
-						onComponentDoubleClick: (uuid, { data, proxyProps }) => {
-							setCurrentItemId(uuid);
-
-							setCurAttributeValues(proxyProps);
-						},
-					}}
-				>
-					<div
-						className="right-panel"
-						onMouseLeave={() => {
-							clearMark();
-						}}
-					>
-						<Tabs
-							type="card"
-							destroyInactiveTabPane
+								_edit.onDidChangeCursorSelection(e => {
+									onCursorSelection(e?.selection);
+								});
+							}}
 							onChange={e => {
-								clearMark();
-								if (e !== 'ast') {
-									setTimeout(() => {
-										setTransformModelCode(code);
-									}, 100);
+								if (monacoChangeLock.current) {
+									monacoChangeLock.current = false;
+									return;
 								}
+								setCode(e);
+
+								transform(e || '');
+							}}
+						/>
+
+						<div
+							className="right-panel"
+							onMouseLeave={() => {
+								clearMark();
 							}}
 						>
-							<Tabs.TabPane key="attribute" tab="属性">
-								<div style={{ height: '100vh', overflow: 'scroll' }}>
-									<AttributePanel
-										code={transformCode}
-										ast={astJson}
-										currentItemId={currentItemId}
-										onGetAttributeValues={() => curAttributeValues}
-										onChange={e => {
-											monacoChangeLock.current = true;
-											setAstJson(e);
-											const out = generateCode(e, transformCode);
-											const _code = prettierFormat(out.code);
-											const formatCodeOutput = removeEditMark(_code);
-											setModelCode(prettierFormat(formatCodeOutput.code));
-											setTransformCode(_code);
-										}}
-									/>
-								</div>
-							</Tabs.TabPane>
-							<Tabs.TabPane key="ast" tab="ast">
-								<div style={{ height: '100vh', overflow: 'scroll' }}>
-									<Input
-										value={searchNodeStr}
-										onChange={e => {
-											setSearchNodeStr(e.target.value);
-										}}
-									/>
-									<JSONTree
-										data={getFormatAstJson(
-											astJson,
-											cursorSelectionRangeKeyList?.length
-												? cursorSelectionRangeKeyList
-												: searchKeysList
-										)}
-										theme={theme}
-										hideRoot
-										shouldExpandNodeInitially={(keyPath, data, level) => level <= 5}
-										labelRenderer={(keyPath: any) => {
-											const label = `"${keyPath[0]}"`;
+							<Tabs
+								type="card"
+								destroyInactiveTabPane
+								onChange={e => {
+									clearMark();
+									if (e !== 'ast') {
+										setTimeout(() => {
+											setTransformModelCode(code);
+										}, 100);
+									}
+								}}
+							>
+								<Tabs.TabPane key="attribute" tab="属性">
+									<div style={{ height: '100vh', overflow: 'scroll' }}>
+										<AttributePanel
+											code={transformCode}
+											ast={astJson}
+											currentItemId={currentItemId}
+											onGetAttributeValues={() => curAttributeValues}
+											onChange={e => {
+												changeAst(e);
+											}}
+										/>
+									</div>
+								</Tabs.TabPane>
+								<Tabs.TabPane key="ast" tab="ast">
+									<div style={{ height: '100vh', overflow: 'scroll' }}>
+										<Input
+											value={searchNodeStr}
+											onChange={e => {
+												setSearchNodeStr(e.target.value);
+											}}
+										/>
+										<JSONTree
+											data={getFormatAstJson(
+												astJson,
+												cursorSelectionRangeKeyList?.length
+													? cursorSelectionRangeKeyList
+													: searchKeysList
+											)}
+											theme={theme}
+											hideRoot
+											shouldExpandNodeInitially={(keyPath, data, level) => level <= 5}
+											labelRenderer={(keyPath: any) => {
+												const label = `"${keyPath[0]}"`;
 
-											const _isSearch = checkKeyList(keyPath, searchKeysList);
-											return (
-												<div
-													onMouseLeave={() => {
-														clearMark();
-													}}
-													className={classNames(
-														_isSearch && 'json-tree-find-active',
-														!_isSearch &&
-															checkKeyList(keyPath, cursorSelectionRangeKeyList) &&
-															'json-preview-is-include-selection'
-													)}
-													onDoubleClick={() => {
-														const val = get(astJson, cloneDeep(keyPath).reverse());
-														console.log('======val====>', val);
-													}}
-													onMouseEnter={() => {
-														showKeyMark(cloneDeep(keyPath) as any);
-													}}
-												>
-													{label}
-												</div>
-											);
-										}}
-									/>
-								</div>
-							</Tabs.TabPane>
+												const _isSearch = checkKeyList(keyPath, searchKeysList);
+												return (
+													<div
+														onMouseLeave={() => {
+															clearMark();
+														}}
+														className={classNames(
+															_isSearch && 'json-tree-find-active',
+															!_isSearch &&
+																checkKeyList(keyPath, cursorSelectionRangeKeyList) &&
+																'json-preview-is-include-selection'
+														)}
+														onDoubleClick={() => {
+															const val = get(astJson, cloneDeep(keyPath).reverse());
+															console.log('======val====>', val);
+														}}
+														onMouseEnter={() => {
+															showKeyMark(cloneDeep(keyPath) as any);
+														}}
+													>
+														{label}
+													</div>
+												);
+											}}
+										/>
+									</div>
+								</Tabs.TabPane>
 
-							<Tabs.TabPane key="code" tab="代码">
-								<div style={{ height: '100vh', overflow: 'scroll' }}>
-									<Input.TextArea value={transformCode} autoSize />
-								</div>
-							</Tabs.TabPane>
-						</Tabs>
+								<Tabs.TabPane key="code" tab="代码">
+									<div style={{ height: '100vh', overflow: 'scroll' }}>
+										<Input.TextArea value={transformCode} autoSize />
+									</div>
+								</Tabs.TabPane>
+							</Tabs>
+						</div>
+						<div ref={previewEl as any} style={{ marginTop: '50px' }}>
+							<CodePreview
+								onPreviewReRender={() => {
+									reload();
+								}}
+								files={[{ filename: 'index.tsx', code: transformCode }]}
+								demoId="modalPath"
+							/>
+						</div>
 					</div>
-					<div ref={previewEl as any}>
-						<CodePreview
-							onPreviewReRender={() => {
-								reload();
-							}}
-							files={[{ filename: 'index.tsx', code: transformCode }]}
-							demoId="modalPath"
-						/>
-					</div>
-				</LowCodeContext.Provider>
-			</div>
+				</DndProvider>
+			</LowCodeContext.Provider>
 		</div>
 	);
 };

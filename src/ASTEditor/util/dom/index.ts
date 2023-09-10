@@ -62,3 +62,7 @@ export const initDoubleEvent = (
 		});
 	};
 };
+
+export const hasDraggingElement = () => {
+	return !!document.querySelector('.low-code-container__dragging');
+};

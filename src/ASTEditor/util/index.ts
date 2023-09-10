@@ -4,12 +4,14 @@ import generate from '@babel/generator';
 import { parse } from '@babel/parser';
 import traverse from '@babel/traverse';
 import { isJSX, jsxAttribute, jsxIdentifier, stringLiteral } from '@babel/types';
-import { forEach, forEachRight, forIn, isArray, isObject, set } from 'lodash';
+import { forIn, isArray, isObject, set } from 'lodash';
 import prettier, { BuiltInParsers, Options } from 'prettier';
 import { v4 as uuid } from 'uuid';
 
 import materialStore from '@/ASTEditor/ASTExplorer/material-store';
 import {
+	createNewContainer,
+	findNodeByUid,
 	getJSXElementName,
 	getValueLiteral,
 	updateAttribute,
@@ -31,37 +33,55 @@ export const toAst = (code: string) => {
 };
 
 export const generateCode = (ast, code) => {
-	return generate(ast, {}, code) || '';
+	return (
+		generate(
+			ast,
+			{ retainLines: true, retainFunctionParens: true, comments: true, compact: false },
+			code
+		) || ''
+	);
 };
 
 const addAttrMark = (ast: string) => {
 	const idMap = {};
+	const hasInsertMap = {};
 	traverse(ast, {
 		enter(path) {
+			if (!path.node._low_code_id) {
+				path.node._low_code_id = uuid();
+			}
+			if (!path.parent._low_code_id) {
+				path.parent._low_code_id = uuid();
+			}
+			const name = getJSXElementName(path.node);
+			const _low_code_id = path.node._low_code_id;
+
 			materialStore.data.forEach(configIt => {
 				if (isJSX(path.node, { type: 'JSXElement' })) {
-					const name = getJSXElementName(path.node);
+					const curNodeUid = _low_code_id;
 					const valid = name === configIt.name;
 					if (valid && getJSXElementName(path.parent) !== 'LowCodeDragItem') {
-						const _uuid = uuid();
 						const ob = {
-							uuid: _uuid,
-							config: configIt,
+							uuid: uuid(),
+							name: getJSXElementName(path.node),
 							node: path?.node,
 							path,
 							event: {},
 						};
-						path.node._uuid = _uuid;
-						const attributes = path?.node?.openingElement?.attributes;
-						const curNode = wrapperJSXElement('LowCodeDragItem', path.node, [
-							...attributes,
-							jsxAttribute(jsxIdentifier('lowCodeItemUId'), stringLiteral(_uuid)),
-						]);
+						ob.config = configIt;
+						const curNode = wrapperJSXElement(
+							'LowCodeDragItem',
+							[path.node],
+							[
+								jsxAttribute(jsxIdentifier('_low_code_id'), stringLiteral(ob.uuid)),
+								jsxAttribute(jsxIdentifier('_low_code_child_id'), stringLiteral(curNodeUid)),
+							]
+						);
 
 						path.replaceWith(curNode);
 
 						const updateAttributeValue = (oldAst, vals) => {
-							const find = findNodeByUid(oldAst, _uuid);
+							const find = findNodeByUid(oldAst, curNodeUid);
 							if (!find) {
 								return;
 							}
@@ -93,6 +113,44 @@ const addAttrMark = (ast: string) => {
 					}
 				}
 			});
+
+			idMap[_low_code_id] = {
+				uuid: _low_code_id,
+				name: getJSXElementName(path.node),
+				node: path?.node,
+				path,
+				event: {},
+			};
+		},
+		exit(path) {
+			const pUid = path.parent._low_code_id;
+			const hasDone = hasInsertMap[pUid];
+			const isEl = ['JSXText', 'JSXElement'].includes(path.node.type);
+			if (!isEl || hasDone) {
+				return;
+			}
+			hasInsertMap[pUid] = true;
+
+			if (
+				path?.parent?.type === 'JSXElement' &&
+				getJSXElementName(path.parent) !== 'LowCodeDragItem'
+			) {
+				const children: any[] = [createNewContainer(pUid)];
+				path?.parent?.children?.forEach((it, idx) => {
+					if (getJSXElementName(it) === 'LowCodeItemContainer') {
+						return;
+					} else if (it.type === 'JSXText') {
+						children.push(it);
+						if (idx === path.parent.children.length - 1) {
+							//children.push(createNewContainer());
+						}
+					} else {
+						children.push(it);
+						children.push(createNewContainer(pUid));
+					}
+				});
+				path.parent.children = children;
+			}
 		},
 	});
 	return idMap;
@@ -112,13 +170,15 @@ export const removeEditMark = (code: string) => {
 	const ast = toAst(code);
 	traverse(ast, {
 		enter(path) {
-			if (getJSXElementName(path.node) === 'LowCodeDragItem') {
+			if (
+				getJSXElementName(path.node) === 'LowCodeDragItem' ||
+				getJSXElementName(path.node) === 'LowCodeItemContainer'
+			) {
 				const find = path.node.children?.find(it => {
 					return materialStore?.data?.some(configIt => {
 						if (isJSX(it, { type: 'JSXElement' })) {
 							const name = getJSXElementName(it);
-							const valid = name === configIt.name;
-							return valid;
+							return name === configIt.name;
 						}
 					});
 				});
@@ -132,39 +192,6 @@ export const removeEditMark = (code: string) => {
 		},
 	});
 	return generate(ast, {}, code);
-};
-
-export const findNodeByUid = (node, uuid, parentKey = []) => {
-	let find: any;
-
-	if (isObject(node)) {
-		if (getJSXElementName(node) === 'LowCodeDragItem') {
-			const find = node.openingElement?.attributes?.find(it => it?.name?.name === 'lowCodeItemUId');
-			if (find?.value?.value === uuid) {
-				return {
-					node,
-					pathList: parentKey,
-				};
-			}
-		}
-		// eslint-disable-next-line array-callback-return
-		Object.keys(node).some(key => {
-			const it = node[key];
-			find = findNodeByUid(it, uuid, [...parentKey, key]);
-			return find;
-		});
-	}
-	if (isArray(node)) {
-		// eslint-disable-next-line array-callback-return
-		node.some((it, idx) => {
-			if (!find) {
-				find = findNodeByUid(it, uuid, [...parentKey, idx]);
-				return find;
-			}
-		});
-	}
-
-	return find;
 };
 
 export const LowCodeContext = createContext({

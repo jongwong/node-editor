@@ -7,6 +7,7 @@ const materialStore = {
 		{
 			name: 'Form',
 			import: 'antd',
+			attribute: [],
 		},
 		{
 			name: 'Item',

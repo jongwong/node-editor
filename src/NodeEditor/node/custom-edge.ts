@@ -65,7 +65,6 @@ G6.registerEdge(
 			const group = item.getContainer();
 			const shape = group.get('children')[0]; // 顺序根据 draw 时确定
 			if (name === 'hover') {
-				console.log('======name====>', name);
 				if (value) {
 					shape.attr('stroke', 'red');
 				} else {

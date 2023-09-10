@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useMemo, useRef } from 'react';
+import { useDragLayer } from 'react-dnd';
 
 import { useUpdate } from 'ahooks';
 import { Button, Form, Input, Radio, Select } from 'antd';
@@ -47,6 +48,7 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 	);
 	const forceUpdate = useUpdate();
 	const oldValueMap = useRef({});
+
 	useEffect(() => {
 		form.resetFields();
 		const map = onGetAttributeValues();

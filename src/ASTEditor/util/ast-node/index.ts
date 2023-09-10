@@ -26,7 +26,8 @@ import {
 	StringLiteral,
 	stringLiteral,
 } from '@babel/types';
-import { isBoolean, isNumber, isString } from 'lodash';
+import { isArray, isBoolean, isNumber, isObject, isString } from 'lodash';
+import { v4 as uuid } from 'uuid';
 
 type NodeType = any;
 export const getJSXElementName = (node: NodeType) => {
@@ -71,14 +72,14 @@ export const getValueLiteral = (val: any) => {
 
 export const wrapperJSXElement = (
 	name: string,
-	node: NodeType,
-	attribute?: Array<JSXAttribute | JSXSpreadAttribute>
+	children: NodeType[],
+	attribute?: Array<JSXAttribute | JSXSpreadAttribute>,
+	selfClose = false
 ) => {
 	const curNode = jsxElement(
-		jsxOpeningElement(jsxIdentifier(name), attribute || [], false),
-		jSXClosingElement(jsxIdentifier(name)),
-		[node],
-		false
+		jsxOpeningElement(jsxIdentifier(name), attribute || [], selfClose),
+		!selfClose ? jSXClosingElement(jsxIdentifier(name)) : null,
+		children
 	);
 	return curNode;
 };
@@ -105,4 +106,58 @@ export const updateAttribute = (attributes = [], name: string, value) => {
 
 const getLiteralName = node => {
 	return node.name.name;
+};
+
+export const createNewContainer = (pUid: string) => {
+	const firstUuid = uuid();
+	const _node = wrapperJSXElement(
+		'LowCodeItemContainer',
+		[],
+		[
+			jsxAttribute(jsxIdentifier('_low_code_id'), stringLiteral(firstUuid)),
+			jsxAttribute(jsxIdentifier('_parent_uid'), stringLiteral(pUid)),
+		],
+		true
+	);
+	_node._low_code_id = firstUuid;
+	return _node;
+};
+export const findNodeByUid = (node, uuid, parentKey = []) => {
+	let find: any;
+
+	if (isObject(node)) {
+		if (node._low_code_id === uuid) {
+			return {
+				node,
+				pathList: parentKey,
+			};
+		}
+		if (getJSXElementName(node) === 'LowCodeDragItem') {
+			const find = node.openingElement?.attributes?.find(it => it?.name?.name === '_low_code_id');
+			if (find?.value?.value === uuid) {
+				return {
+					node,
+					pathList: parentKey,
+				};
+			}
+		}
+
+		// eslint-disable-next-line array-callback-return
+		Object.keys(node).some(key => {
+			const it = node[key];
+			find = findNodeByUid(it, uuid, [...parentKey, key]);
+			return find;
+		});
+	}
+	if (isArray(node)) {
+		// eslint-disable-next-line array-callback-return
+		node.some((it, idx) => {
+			if (!find) {
+				find = findNodeByUid(it, uuid, [...parentKey, idx]);
+				return find;
+			}
+		});
+	}
+
+	return find;
 };

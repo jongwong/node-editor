@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useDragLayer } from 'react-dnd';
 
 import { ReactLiveEditorPreview } from '@jongwong/react-live-editor';
 
@@ -18,6 +19,7 @@ const CodePreview: React.FC<CodePreviewProps> = props => {
 		customRequire: customGlobalRequire,
 	});
 	const fileRef = useRef('');
+
 	useEffect(() => {
 		const str = JSON.stringify(files.some((a, b) => a.filename.localeCompare(b.filename)));
 		if (str !== fileRef.current) {

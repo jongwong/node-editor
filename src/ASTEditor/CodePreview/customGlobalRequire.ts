@@ -4,14 +4,14 @@ import * as Antd from 'antd';
 import * as _lodash from 'lodash';
 
 import LowCodeDragItem from '@/ASTEditor/component/LowCodeDragItem';
-import LowCodeItemProxy from '@/ASTEditor/component/LowCodeItemProxy';
+import LowCodeItemContainer from '@/ASTEditor/component/LowCodeItemContainer';
 
 const customGlobalRequire = (key: string) => {
 	const ob: any = {
 		antd: Antd,
 		lodash: _lodash,
 		react: _React,
-		'@yoo/low-code': { LowCodeDragItem, LowCodeItemProxy },
+		'@yoo/low-code': { LowCodeDragItem, LowCodeItemContainer },
 	};
 
 	return ob[key];
