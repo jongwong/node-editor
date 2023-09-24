@@ -1,11 +1,10 @@
 import React, { useContext, useEffect, useMemo, useRef } from 'react';
-import { useDragLayer } from 'react-dnd';
 
 import { useUpdate } from 'ahooks';
 import { Button, Form, Input, Radio, Select } from 'antd';
 import { forEach, forIn, set, values } from 'lodash';
 
-import { findNodeByUid, LowCodeContext } from '@/ASTEditor/util';
+import { LowCodeContext } from '@/ASTEditor/ASTExplorer/useLowCodeContext';
 
 const { Item } = Form;
 const valueTypeMap = {
@@ -36,22 +35,22 @@ type AttributePanelProps = {
 	ast: any;
 	onChange: (e: any) => void;
 	currentItemId?: string;
-	onGetAttributeValues: () => any;
 };
 const AttributePanel: React.FC<AttributePanelProps> = props => {
-	const { code, onGetAttributeValues, onChange, currentItemId, ast, ...rest } = props;
+	const { code, onChange, ast, ...rest } = props;
 	const [form] = Form.useForm();
-	const { dataMap } = useContext(LowCodeContext);
+	const { dataMap, currentItemId, currentItemChildId, getAttributeValues } =
+		useContext(LowCodeContext);
 	const data = useMemo(
 		() => (dataMap[currentItemId] ? dataMap[currentItemId] : {}),
 		[dataMap, currentItemId]
 	);
 	const forceUpdate = useUpdate();
 	const oldValueMap = useRef({});
-
 	useEffect(() => {
 		form.resetFields();
-		const map = onGetAttributeValues();
+		const map = getAttributeValues();
+
 		forEach(data?.config?.attribute || [], (it, idx) => {
 			const ob = {
 				name: it.name,
@@ -60,8 +59,7 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 			form.setFields([ob]);
 		});
 		oldValueMap.current = map;
-		forceUpdate();
-	}, [currentItemId, data]);
+	}, [currentItemChildId, data]);
 
 	const attribute = data?.config?.attribute || [];
 	const getRender = it => {
@@ -90,7 +88,12 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 							}
 						});
 						if (Object.keys(ob).length) {
-							const newAst = data?.event?.updateAttributeValue(ast, ob);
+							const find = attribute?.find(it => it?.withTextChildren);
+							const newAst = data?.event?.updateAttributeValue(
+								ast,
+								ob,
+								find ? { name: find?.name, oldValue: oldValueMap?.current?.[find.name] } : undefined
+							);
 							if (newAst) {
 								onChange?.(newAst);
 							}

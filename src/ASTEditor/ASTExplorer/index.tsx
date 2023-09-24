@@ -23,17 +23,11 @@ import * as monacoEditor from 'monaco-editor';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
 import AttributePanel from '@/ASTEditor/ASTExplorer/AttributePanel';
+import { astViewTheme, initOtherConfig } from '@/ASTEditor/ASTExplorer/init';
+import useLowCodeContext, { LowCodeContext } from '@/ASTEditor/ASTExplorer/useLowCodeContext';
 import CodePreview from '@/ASTEditor/CodePreview';
-import useLowCode from '@/ASTEditor/hooks/use-low-code';
 import { code2 } from '@/ASTEditor/raw-code';
-import {
-	addEditMark,
-	generateCode,
-	LowCodeContext,
-	prettierFormat,
-	removeEditMark,
-	toAst,
-} from '@/ASTEditor/util';
+import { addEditMark, generateCode, prettierFormat, removeEditMark } from '@/ASTEditor/util';
 
 import './index.less';
 
@@ -47,65 +41,46 @@ import {
 
 const HINT_CLASSNAME = 'monaco-find-ast-remark';
 const modalPath = 'ASTExplorer/default';
-const initOtherConfig = (m: typeof monacoEditor) => {
-	m.languages.typescript.typescriptDefaults.setEagerModelSync(true);
-	m.languages.typescript.javascriptDefaults.setEagerModelSync(true);
-	// 打开语法检查功能
-	m.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
-		noSemanticValidation: true,
-		noSyntaxValidation: true,
-	});
-	m.languages.typescript.javascriptDefaults.setCompilerOptions({
-		allowJs: true,
-		jsx: monaco.languages.typescript.JsxEmit.ReactJSX,
-		// module: monaco.languages.typescript.ModuleKind.CommonJS,
-		typeRoots: ['node_modules/@types'],
-	});
-	m.languages.typescript.typescriptDefaults.setCompilerOptions({
-		jsx: monaco.languages.typescript.JsxEmit.ReactJSX,
-		// module: monaco.languages.typescript.ModuleKind.CommonJS,
-		noEmit: true,
-		typeRoots: ['node_modules/@types'],
-	});
-};
 
-const theme = {
-	scheme: 'monokai',
-	author: 'wimer hazenberg (http://www.monokai.nl)',
-	base00: '#ffffff',
-	base01: '#ffffff',
-	base02: '#49483e',
-	base03: '#75715e',
-	base04: '#a59f85',
-	base05: '#f8f8f2',
-	base06: '#f5f4f1',
-	base07: '#f9f8f5',
-	base08: '#f92672',
-	base09: '#fd971f',
-	base0A: '#f4bf75',
-	base0B: '#a4bb74',
-	base0C: '#a1efe4',
-	base0D: '#78a8a8',
-	base0E: '#ae81ff',
-	base0F: '#cc6633',
-};
 const Index: React.FC = props => {
 	const { ...rest } = props;
 
 	const [code, setCode] = useState(prettierFormat(code2 || ''));
 	const [transformCode, setTransformCode] = useState('');
-	const [astJson, _setAstJson] = useState({});
+	const previewElRef = useRef<HTMLDivElement>();
 	const astJsonRef = useRef({});
 	const getAstJson = () => astJsonRef.current;
-	const setAstJson = (e: any) => {
-		astJsonRef.current = e;
-		_setAstJson(e);
-	};
+
 	const initCodeRef = useRef(false);
 	const editorRef = useRef<monacoEditor.editor.IStandaloneCodeEditor>();
 	const newEditRef = useRef<monacoEditor.editor.IStandaloneCodeEditor>();
 	const monacoRef = useRef<typeof monacoEditor>();
-	const [dataMap, setDataMap] = useState({});
+
+	const changeAst = e => {
+		monacoChangeLock.current = true;
+
+		const out = generateCode(e, transformCode);
+		const _code = prettierFormat(out.code);
+
+		const formatCodeOutput = removeEditMark(_code);
+		setModelCode(prettierFormat(formatCodeOutput.code));
+		setTransformCode(_code);
+	};
+	const {
+		astJson,
+		providerValues,
+		setDataMap,
+		reload,
+		setAstJson: _setAstJson,
+	} = useLowCodeContext({
+		changeAst,
+		preElement: previewElRef.current,
+	});
+
+	const setAstJson = (e: any) => {
+		astJsonRef.current = e;
+		_setAstJson(e);
+	};
 	const transform = (e: string) => {
 		const { output, transformDataMap: _transformDataMap, ast } = addEditMark(e);
 		setDataMap(_transformDataMap);
@@ -219,7 +194,6 @@ const Index: React.FC = props => {
 		);
 	};
 
-	const [curAttributeValues, setCurAttributeValues] = useState({});
 	const [cursorSelectionRangeKeyList, setCursorSelectionRangeKeyList] = useState([]);
 	const { run: onCursorSelection } = useDebounceFn(
 		e => {
@@ -244,43 +218,12 @@ const Index: React.FC = props => {
 		},
 		{ wait: 300 }
 	);
-	const [currentItemId, setCurrentItemId] = useState();
-	const previewEl = useRef<HTMLDivElement>();
-	const { reload } = useLowCode({
-		preElement: previewEl.current,
-		dataMap,
-	});
-	const changeAst = e => {
-		monacoChangeLock.current = true;
 
-		const out = generateCode(e, transformCode);
-		const _code = prettierFormat(out.code);
-
-		const formatCodeOutput = removeEditMark(_code);
-		setModelCode(prettierFormat(formatCodeOutput.code));
-		setTransformCode(_code);
-	};
 	const monacoChangeLock = useRef(false);
-	const [hoverItemIdMap, setHoverItemMap] = useState({});
+
 	return (
 		<div>
-			<LowCodeContext.Provider
-				value={{
-					dataMap,
-					currentItemId,
-					onComponentDoubleClick: (uuid, { data, proxyProps }) => {
-						setCurrentItemId(uuid);
-
-						setCurAttributeValues(proxyProps);
-					},
-					onAstChange: changeAst,
-					astJson: astJson,
-					hoverItemIdMap,
-					onItemHover: (uuid, e) => {
-						setHoverItemMap(old => ({ ...old, uuid: e }));
-					},
-				}}
-			>
+			<LowCodeContext.Provider value={providerValues}>
 				<DndProvider backend={HTML5Backend}>
 					<div style={{ display: 'grid', gridTemplateColumns: '35%  30% auto' }}>
 						<MonacoEditor
@@ -333,8 +276,6 @@ const Index: React.FC = props => {
 										<AttributePanel
 											code={transformCode}
 											ast={astJson}
-											currentItemId={currentItemId}
-											onGetAttributeValues={() => curAttributeValues}
 											onChange={e => {
 												changeAst(e);
 											}}
@@ -356,7 +297,7 @@ const Index: React.FC = props => {
 													? cursorSelectionRangeKeyList
 													: searchKeysList
 											)}
-											theme={theme}
+											theme={astViewTheme}
 											hideRoot
 											shouldExpandNodeInitially={(keyPath, data, level) => level <= 5}
 											labelRenderer={(keyPath: any) => {
@@ -376,7 +317,6 @@ const Index: React.FC = props => {
 														)}
 														onDoubleClick={() => {
 															const val = get(astJson, cloneDeep(keyPath).reverse());
-															console.log('======val====>', val);
 														}}
 														onMouseEnter={() => {
 															showKeyMark(cloneDeep(keyPath) as any);
@@ -397,7 +337,8 @@ const Index: React.FC = props => {
 								</Tabs.TabPane>
 							</Tabs>
 						</div>
-						<div ref={previewEl as any} style={{ marginTop: '50px' }}>
+
+						<div ref={previewElRef as any} style={{ marginTop: '50px' }}>
 							<CodePreview
 								onPreviewReRender={() => {
 									reload();

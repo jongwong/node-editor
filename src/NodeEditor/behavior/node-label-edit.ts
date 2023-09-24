@@ -65,7 +65,6 @@ G6.registerBehavior('node-label-edit', {
 	_createInput(ev: any) {
 		const self = this;
 		let { item, target } = ev;
-		console.log('======ev====>', target);
 
 		this.group = target.cfg?.parent;
 		this.target = target;

@@ -21,9 +21,11 @@ const CodePreview: React.FC<CodePreviewProps> = props => {
 	const fileRef = useRef('');
 
 	useEffect(() => {
-		const str = JSON.stringify(files.some((a, b) => a.filename.localeCompare(b.filename)));
+		const str = JSON.stringify(files.sort((a, b) => a.filename.localeCompare(b.filename)));
+
 		if (str !== fileRef.current) {
 			bundle(files);
+			fileRef.current = str;
 		}
 	}, [files]);
 	const renderPreview = () => {

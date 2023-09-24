@@ -1,29 +1,14 @@
 import {
-	assertJSX,
-	assertJSXElement,
-	assertJSXOpeningElement,
-	assertJSXOpeningFragment,
-	assertNode,
-	BooleanLiteral,
-	booleanLiteral,
-	decimalLiteral,
-	isBooleanLiteral,
 	JSXAttribute,
 	jsxAttribute,
 	jSXClosingElement,
 	jsxElement,
-	jsxExpressionContainer,
 	jsxIdentifier,
 	jsxOpeningElement,
 	JSXSpreadAttribute,
-	NullLiteral,
+	jsxText,
 	nullLiteral,
-	NumericLiteral,
 	numericLiteral,
-	ObjectExpression,
-	objectExpression,
-	RegExpLiteral,
-	StringLiteral,
 	stringLiteral,
 } from '@babel/types';
 import { isArray, isBoolean, isNumber, isObject, isString } from 'lodash';
@@ -115,6 +100,7 @@ export const createNewContainer = (pUid: string) => {
 		[],
 		[
 			jsxAttribute(jsxIdentifier('_low_code_id'), stringLiteral(firstUuid)),
+			jsxAttribute(jsxIdentifier('_low_code_name'), stringLiteral('LowCodeItemContainer')),
 			jsxAttribute(jsxIdentifier('_parent_uid'), stringLiteral(pUid)),
 		],
 		true
@@ -160,4 +146,16 @@ export const findNodeByUid = (node, uuid, parentKey = []) => {
 	}
 
 	return find;
+};
+
+export const updateJexTextNode = (node, val: string) => {
+	if (!node) {
+		return jsxText(val);
+	}
+
+	node.value = val;
+	node.extra.value = val;
+	const raw = node.extra.raw;
+	node.extra.raw = raw[0] + val + raw[raw.lenght - 1];
+	return node;
 };

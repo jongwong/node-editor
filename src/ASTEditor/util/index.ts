@@ -15,6 +15,7 @@ import {
 	getJSXElementName,
 	getValueLiteral,
 	updateAttribute,
+	updateJexTextNode,
 	wrapperJSXElement,
 } from '@/ASTEditor/util/ast-node';
 
@@ -73,6 +74,7 @@ const addAttrMark = (ast: string) => {
 							'LowCodeDragItem',
 							[path.node],
 							[
+								jsxAttribute(jsxIdentifier('_low_code_name'), stringLiteral('LowCodeDragItem')),
 								jsxAttribute(jsxIdentifier('_low_code_id'), stringLiteral(ob.uuid)),
 								jsxAttribute(jsxIdentifier('_low_code_child_id'), stringLiteral(curNodeUid)),
 							]
@@ -80,13 +82,28 @@ const addAttrMark = (ast: string) => {
 
 						path.replaceWith(curNode);
 
-						const updateAttributeValue = (oldAst, vals) => {
+						const updateAttributeValue = (oldAst, vals, childrenConfig) => {
 							const find = findNodeByUid(oldAst, curNodeUid);
 							if (!find) {
 								return;
 							}
 
 							forIn(vals, (valueIt, key) => {
+								if (childrenConfig && childrenConfig.name === key) {
+									const findIndex = find.node?.children?.findIndex(_it => _it?.type === 'JSXText');
+									const _newNode = updateJexTextNode(
+										find.node?.children[findIndex],
+										vals[childrenConfig.name]
+									);
+
+									if (findIndex >= 0) {
+										find.node.children[findIndex] = _newNode;
+									} else {
+										find.node.children?.push(_newNode);
+									}
+
+									return;
+								}
 								if (find?.node.openingElement?.attributes) {
 									find.node.openingElement.attributes = updateAttribute(
 										find?.node.openingElement?.attributes,
@@ -193,9 +210,3 @@ export const removeEditMark = (code: string) => {
 	});
 	return generate(ast, {}, code);
 };
-
-export const LowCodeContext = createContext({
-	astJson: {},
-	dataMap: {},
-	onComponentDoubleClick: () => null,
-});

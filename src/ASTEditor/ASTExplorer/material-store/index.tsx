@@ -60,6 +60,11 @@ const materialStore = {
 					name: 'danger',
 					valueType: 'bool',
 				},
+				{
+					name: 'children',
+					valueType: 'input',
+					withTextChildren: true,
+				},
 			],
 		},
 		{

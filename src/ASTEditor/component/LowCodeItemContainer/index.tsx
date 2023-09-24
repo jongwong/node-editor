@@ -4,8 +4,8 @@ import { useDrag, useDragLayer, useDrop } from 'react-dnd';
 import classNames from 'classnames';
 import { get, last, set, take } from 'lodash';
 
+import { LowCodeContext } from '@/ASTEditor/ASTExplorer/useLowCodeContext';
 import { EDragItemType } from '@/ASTEditor/constants';
-import { LowCodeContext } from '@/ASTEditor/util';
 import { findNodeByUid, getJSXElementName } from '@/ASTEditor/util/ast-node';
 
 type LowCodeItemContainerProps = {
@@ -93,7 +93,7 @@ const LowCodeItemContainer: React.FC<LowCodeItemContainerProps> = props => {
 			className={classNames('low-code-container', isOverCurrent && 'low-code-container__dropping')}
 			ref={dropRef}
 		>
-			<span>{isOverCurrent ? `parent: ${parentNode?.openingElement?.name?.name}` : null}</span>
+			<span>{isOverCurrent ? `${parentNode?.openingElement?.name?.name}` : null}</span>
 		</div>
 	);
 };
