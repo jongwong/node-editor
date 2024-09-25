@@ -1,12 +1,23 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useDrag, useDragLayer, useDrop } from 'react-dnd';
 
+import traverse from '@babel/traverse';
+import {
+	importDeclaration,
+	importDefaultSpecifier,
+	importSpecifier,
+	isImportDeclaration,
+	jSXText,
+	jsxText,
+	stringLiteral,
+} from '@babel/types';
 import classNames from 'classnames';
-import { get, last, set, take } from 'lodash';
+import { findLastIndex, get, last, set, take, toPath } from 'lodash';
 
 import { LowCodeContext } from '@/ASTEditor/ASTExplorer/useLowCodeContext';
 import { EDragItemType } from '@/ASTEditor/constants';
-import { findNodeByUid, getJSXElementName } from '@/ASTEditor/util/ast-node';
+import { addEditMark, removeEditMark, removeEditMarkAst } from '@/ASTEditor/util';
+import { findNodeByUid, getJSXElementName, wrapperJSXElement } from '@/ASTEditor/util/ast-node';
 
 type LowCodeItemContainerProps = {
 	children?: React.ReactNode;
@@ -16,7 +27,7 @@ type LowCodeItemContainerProps = {
 const LowCodeItemContainer: React.FC<LowCodeItemContainerProps> = props => {
 	// eslint-disable-next-line react/prop-types
 	const { _low_code_id: uuid, ...rest } = props;
-	const { astJson, onAstChange, dataMap } = useContext(LowCodeContext);
+	const { astJson, onAstChange, clearMap, dataMap } = useContext(LowCodeContext);
 
 	const { curData, parentNode } = useMemo(() => {
 		const find = findNodeByUid(astJson, uuid);
@@ -26,55 +37,79 @@ const LowCodeItemContainer: React.FC<LowCodeItemContainerProps> = props => {
 			parentNode: parentNode,
 		};
 	}, [astJson, uuid]);
+
+	const onItemDrop = item => {
+		const targetFind = findNodeByUid(astJson, uuid);
+
+		const moveFind = findNodeByUid(astJson, item.uuid);
+
+		set(astJson, moveFind?.pathList, targetFind.node);
+		set(astJson, targetFind.pathList, moveFind.node);
+
+		onAstChange?.(astJson);
+	};
+	const onMaterialItemDrop = item => {
+		const importName = item?.materialData?.import;
+		const name = item?.materialData?.name;
+		let find = false;
+
+		const updateImportSpecifiers = node => {
+			const hasSpec = node.specifiers?.some(it => it?.imported?.name === name);
+			const val = importSpecifier(
+				{
+					type: 'Identifier',
+					name: name,
+				},
+				{
+					type: 'Identifier',
+					name: name,
+				}
+			);
+			if (!hasSpec) {
+				node.specifiers.push(val);
+			}
+		};
+		traverse(astJson, {
+			enter: path => {
+				const node = path.node;
+
+				if (isImportDeclaration(node) && node?.source?.value === importName) {
+					find = true;
+					updateImportSpecifiers(node);
+				}
+			},
+			exit: (path, state) => {
+				if (path.node.type !== 'Program' || find) {
+					return;
+				}
+				const newNode = importDeclaration([], stringLiteral(importName));
+				updateImportSpecifiers(newNode);
+				const lastIndex = findLastIndex(path?.node?.body, it => isImportDeclaration(it));
+				path.node.body.splice(lastIndex + 1, 0, newNode);
+			},
+		});
+
+		const child = [];
+		const findChild = item?.materialData?.attribute?.find(it => it?.withTextChildren);
+		if (findChild) {
+			const val = item?.materialData?.defaultAttributeValue[findChild?.name] || name;
+			child.push(jsxText(val));
+		}
+		const newElNode = wrapperJSXElement(name, child);
+
+		const targetFind = findNodeByUid(astJson, uuid);
+		set(astJson, targetFind.pathList, newElNode);
+		onAstChange(astJson);
+	};
 	const [{ isOver, isOverCurrent }, dropRef] = useDrop(
 		() => ({
-			accept: EDragItemType.LowCodeDragItem,
+			accept: [EDragItemType.LowCodeDragItem, EDragItemType.MaterialItem],
 			drop: (item, monitor) => {
-				const targetFind = findNodeByUid(astJson, uuid);
-				const targetPath = take(targetFind.pathList, targetFind.pathList.length - 1);
-
-				const moveFind = findNodeByUid(astJson, item.uuid);
-				const movePath = take(moveFind.pathList, moveFind.pathList.length - 1);
-				const targetChild = get(astJson, targetPath);
-				const moveChild: any[] = get(astJson, movePath);
-				const targetIndex = +last(targetFind.pathList);
-				const moveIndex = +last(moveFind.pathList);
-				let takeList = [];
-				let lIdx = moveIndex;
-				let rIdx = moveIndex;
-				let rd = false;
-				let ld = false;
-				while (!ld || !rd) {
-					if (lIdx === rIdx) {
-						takeList.push(moveChild[lIdx]);
-					} else {
-						if (!ld && lIdx >= 0) {
-							takeList = [moveChild[lIdx], ...takeList];
-							if (getJSXElementName(moveChild[lIdx]) === 'LowCodeItemContainer') {
-								ld = true;
-							}
-						}
-
-						if (!rd && rIdx < moveChild.length) {
-							takeList = [...takeList, moveChild[rIdx]];
-							if (getJSXElementName(moveChild[rIdx]) === 'LowCodeItemContainer') {
-								rd = true;
-							}
-						}
-					}
-					if (!ld) {
-						lIdx = lIdx - 1;
-					}
-					if (!rd) {
-						rIdx = rIdx + 1;
-					}
+				if (item?.type === EDragItemType.MaterialItem) {
+					onMaterialItemDrop(item);
+				} else {
+					onItemDrop(item);
 				}
-
-				moveChild.splice(lIdx, takeList.length, targetFind.node);
-				targetChild.splice(targetIndex, 1, ...takeList);
-				set(astJson, movePath, moveChild);
-				set(astJson, targetPath, targetChild);
-				onAstChange?.(astJson);
 			},
 			collect: monitor => {
 				return {

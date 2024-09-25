@@ -43,7 +43,7 @@ export const generateCode = (ast, code) => {
 	);
 };
 
-const addAttrMark = (ast: string) => {
+const addAttrMark = (ast: any) => {
 	const idMap = {};
 	const hasInsertMap = {};
 	traverse(ast, {
@@ -177,14 +177,13 @@ export const addEditMark = (code: string) => {
 	const ast = toAst(code);
 	const transformDataMap = addAttrMark(ast);
 	return {
-		output: generate(ast, {}, code) || '',
+		outputCode: prettierFormat(generate(ast, {}, code).code || ''),
 		transformDataMap,
 		ast,
 	};
 };
 
-export const removeEditMark = (code: string) => {
-	const ast = toAst(code);
+export const removeEditMarkAst = (ast: any) => {
 	traverse(ast, {
 		enter(path) {
 			if (
@@ -208,5 +207,11 @@ export const removeEditMark = (code: string) => {
 			}
 		},
 	});
+	return ast;
+};
+
+export const removeEditMark = (code: string | Record<string, any>) => {
+	const ast = toAst(code);
+	removeEditMarkAst(ast);
 	return generate(ast, {}, code);
 };

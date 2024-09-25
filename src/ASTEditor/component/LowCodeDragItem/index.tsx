@@ -61,7 +61,9 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 			}}
 			onDoubleClick={e => {
 				onComponentDoubleClick?.(props, curData);
+
 				e.stopPropagation();
+				e.preventDefault();
 				return false;
 			}}
 			onMouseOver={e => {

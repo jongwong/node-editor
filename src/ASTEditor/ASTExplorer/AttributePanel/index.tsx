@@ -32,14 +32,12 @@ const valueTypeMap = {
 
 type AttributePanelProps = {
 	code: string;
-	ast: any;
-	onChange: (e: any) => void;
 	currentItemId?: string;
 };
 const AttributePanel: React.FC<AttributePanelProps> = props => {
-	const { code, onChange, ast, ...rest } = props;
+	const { code, ...rest } = props;
 	const [form] = Form.useForm();
-	const { dataMap, currentItemId, currentItemChildId, getAttributeValues } =
+	const { dataMap, astJson, currentItemId, onAstChange, currentItemChildId, getAttributeValues } =
 		useContext(LowCodeContext);
 	const data = useMemo(
 		() => (dataMap[currentItemId] ? dataMap[currentItemId] : {}),
@@ -90,12 +88,12 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 						if (Object.keys(ob).length) {
 							const find = attribute?.find(it => it?.withTextChildren);
 							const newAst = data?.event?.updateAttributeValue(
-								ast,
+								astJson,
 								ob,
 								find ? { name: find?.name, oldValue: oldValueMap?.current?.[find.name] } : undefined
 							);
 							if (newAst) {
-								onChange?.(newAst);
+								onAstChange?.(newAst);
 							}
 						}
 					}}

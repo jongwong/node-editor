@@ -8,4 +8,5 @@ export enum EOperationAttributeName {
 }
 export const EDragItemType = {
 	LowCodeDragItem: 'LowCodeDragItem',
+	MaterialItem: 'MaterialItem',
 };

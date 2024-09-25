@@ -24,6 +24,7 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
 import AttributePanel from '@/ASTEditor/ASTExplorer/AttributePanel';
 import { astViewTheme, initOtherConfig } from '@/ASTEditor/ASTExplorer/init';
+import MaterialPanel from '@/ASTEditor/ASTExplorer/MaterialPanel';
 import useLowCodeContext, { LowCodeContext } from '@/ASTEditor/ASTExplorer/useLowCodeContext';
 import CodePreview from '@/ASTEditor/CodePreview';
 import { code2 } from '@/ASTEditor/raw-code';
@@ -46,7 +47,7 @@ const Index: React.FC = props => {
 	const { ...rest } = props;
 
 	const [code, setCode] = useState(prettierFormat(code2 || ''));
-	const [transformCode, setTransformCode] = useState('');
+
 	const previewElRef = useRef<HTMLDivElement>();
 	const astJsonRef = useRef({});
 	const getAstJson = () => astJsonRef.current;
@@ -56,36 +57,24 @@ const Index: React.FC = props => {
 	const newEditRef = useRef<monacoEditor.editor.IStandaloneCodeEditor>();
 	const monacoRef = useRef<typeof monacoEditor>();
 
-	const changeAst = e => {
-		monacoChangeLock.current = true;
-
-		const out = generateCode(e, transformCode);
-		const _code = prettierFormat(out.code);
-
-		const formatCodeOutput = removeEditMark(_code);
-		setModelCode(prettierFormat(formatCodeOutput.code));
-		setTransformCode(_code);
-	};
 	const {
 		astJson,
 		providerValues,
-		setDataMap,
 		reload,
 		setAstJson: _setAstJson,
+		transformCode,
+		transform,
 	} = useLowCodeContext({
-		changeAst,
+		onCodeChange: e => {
+			setModelCode(e);
+			monacoChangeLock.current = true;
+		},
 		preElement: previewElRef.current,
 	});
 
 	const setAstJson = (e: any) => {
 		astJsonRef.current = e;
 		_setAstJson(e);
-	};
-	const transform = (e: string) => {
-		const { output, transformDataMap: _transformDataMap, ast } = addEditMark(e);
-		setDataMap(_transformDataMap);
-		setTransformCode(output.code);
-		setAstJson(ast);
 	};
 
 	const lastDecorationsRef = useRef<string[]>();
@@ -220,6 +209,9 @@ const Index: React.FC = props => {
 	);
 
 	const monacoChangeLock = useRef(false);
+	useEffect(() => {
+		transform(code);
+	}, []);
 
 	return (
 		<div>
@@ -273,13 +265,7 @@ const Index: React.FC = props => {
 							>
 								<Tabs.TabPane key="attribute" tab="属性">
 									<div style={{ height: '100vh', overflow: 'scroll' }}>
-										<AttributePanel
-											code={transformCode}
-											ast={astJson}
-											onChange={e => {
-												changeAst(e);
-											}}
-										/>
+										<AttributePanel code={transformCode} />
 									</div>
 								</Tabs.TabPane>
 								<Tabs.TabPane key="ast" tab="ast">
@@ -334,6 +320,10 @@ const Index: React.FC = props => {
 									<div style={{ height: '100vh', overflow: 'scroll' }}>
 										<Input.TextArea value={transformCode} autoSize />
 									</div>
+								</Tabs.TabPane>
+
+								<Tabs.TabPane key="material" tab="物料库">
+									<MaterialPanel />
 								</Tabs.TabPane>
 							</Tabs>
 						</div>

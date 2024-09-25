@@ -1,8 +1,16 @@
 import React, { createContext, useCallback, useRef, useState } from 'react';
 
+import generate from '@babel/generator';
 import { useDebounceFn } from 'ahooks';
 import { isNumber, isString } from 'lodash';
 
+import {
+	addEditMark,
+	generateCode,
+	prettierFormat,
+	removeEditMark,
+	removeEditMarkAst,
+} from '@/ASTEditor/util';
 import { initHoverEvent } from '@/ASTEditor/util/dom';
 
 export const LowCodeContext = createContext<{
@@ -21,10 +29,11 @@ export const LowCodeContext = createContext<{
 }>({});
 
 const useLowCodeContext = ({
-	changeAst,
 	preElement,
+	onCodeChange,
 }: {
-	changeAst: any;
+	onCodeChange: any;
+
 	preElement: HTMLElement | undefined;
 }): {
 	setAstJson: any;
@@ -32,6 +41,7 @@ const useLowCodeContext = ({
 	providerValues: any;
 	astJson: any;
 	setDataMap: any;
+	transformCode: string;
 } => {
 	const [currentItemId, setCurrentItemId] = useState();
 	const [currentItemChildId, setCurrentItemChildId] = useState();
@@ -39,7 +49,16 @@ const useLowCodeContext = ({
 	const [astJson, setAstJson] = useState({});
 	const [hoverItemIdMap, setHoverItemMap] = useState({});
 	const [dataMap, setDataMap] = useState({});
+	const changeAst = e => {
+		const out = generateCode(e, transformCode);
+		const _code = prettierFormat(out.code);
 
+		const formatCodeOutput = removeEditMark(_code);
+		const code = prettierFormat(formatCodeOutput.code);
+
+		setTransformCode(_code);
+		onCodeChange?.(code);
+	};
 	const reloadHover = () => {
 		if (!preElement) {
 			return;
@@ -52,18 +71,36 @@ const useLowCodeContext = ({
 
 		initHoverEvent(preElement);
 	};
-	const { run: debounceReload } = useDebounceFn(() => reloadHover(), { wait: 500, leading: false });
 
+	const transform = (e: string) => {
+		const { outputCode, transformDataMap: _transformDataMap, ast } = addEditMark(e);
+		setDataMap(_transformDataMap);
+		setAstJson(ast);
+		setTransformCode(outputCode);
+	};
+	const { run: debounceReload } = useDebounceFn(() => reloadHover(), { wait: 500, leading: false });
+	const [transformCode, setTransformCode] = useState('');
 	const providerValues = {
 		dataMap,
 		currentItemId,
 		currentItemChildId,
+		reCalculateEditMark: e => {
+			setCurrentItemId(undefined);
+			setCurrentItemChildId(undefined);
+			setDataMap({});
+			const _ast = removeEditMarkAst(e);
+			const { outputCode, transformDataMap, ast } = addEditMark(_ast);
+			setAstJson(ast);
+		},
 		onComponentDoubleClick: (_props, curData) => {
 			const { _low_code_id, _low_code_child_id, children } = _props;
 			const hasText = curData?.config?.attribute?.find(it => it?.withTextChildren);
 			const _children = children?.props?.children;
 			const findIndex = hasText ? _children?.findIndex(it => isString(it) || isNumber(it)) : -1;
-			const _attributeValue = { ...children.props, children: _children[findIndex] };
+			const _attributeValue = {
+				...children.props,
+				children: findIndex >= 0 ? _children[findIndex] : undefined,
+			};
 
 			curAttributeValuesRef.current = _attributeValue;
 			setCurrentItemId(_low_code_id);
@@ -82,9 +119,10 @@ const useLowCodeContext = ({
 	return {
 		providerValues,
 		astJson,
-		setDataMap,
 		reload: debounceReload,
 		setAstJson,
+		transformCode,
+		transform,
 	};
 };
 export default useLowCodeContext;
