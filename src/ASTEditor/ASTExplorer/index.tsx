@@ -25,7 +25,9 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import AttributePanel from '@/ASTEditor/ASTExplorer/AttributePanel';
 import { astViewTheme, initOtherConfig } from '@/ASTEditor/ASTExplorer/init';
 import MaterialPanel from '@/ASTEditor/ASTExplorer/MaterialPanel';
-import useLowCodeContext, { LowCodeContext } from '@/ASTEditor/ASTExplorer/useLowCodeContext';
+import useLowCodeContext, {
+	LowCodeContextProvider,
+} from '@/ASTEditor/ASTExplorer/useLowCodeContext';
 import CodePreview from '@/ASTEditor/CodePreview';
 import { code2 } from '@/ASTEditor/raw-code';
 import { addEditMark, generateCode, prettierFormat, removeEditMark } from '@/ASTEditor/util';
@@ -57,25 +59,12 @@ const Index: React.FC = props => {
 	const newEditRef = useRef<monacoEditor.editor.IStandaloneCodeEditor>();
 	const monacoRef = useRef<typeof monacoEditor>();
 
-	const {
-		astJson,
-		providerValues,
-		reload,
-		setAstJson: _setAstJson,
-		transformCode,
-		transform,
-	} = useLowCodeContext({
+	const { astJson, providerValues, reload, transformCode, transform } = useLowCodeContext({
 		onCodeChange: e => {
 			setModelCode(e);
-			monacoChangeLock.current = true;
 		},
 		preElement: previewElRef.current,
 	});
-
-	const setAstJson = (e: any) => {
-		astJsonRef.current = e;
-		_setAstJson(e);
-	};
 
 	const lastDecorationsRef = useRef<string[]>();
 
@@ -146,7 +135,10 @@ const Index: React.FC = props => {
 	useEffect(() => {
 		if (code && modalRef.current && !initCodeRef.current) {
 			initCodeRef.current = true;
-			setModelCode();
+			const m = modalRef.current;
+			if (!m || code !== m?.getValue()) {
+				setModelCode(code);
+			}
 		}
 	}, [code]);
 	const [searchNodeStr, setSearchNodeStr] = useState('');
@@ -208,14 +200,13 @@ const Index: React.FC = props => {
 		{ wait: 300 }
 	);
 
-	const monacoChangeLock = useRef(false);
 	useEffect(() => {
 		transform(code);
 	}, []);
-
+	const isFocusedRef = useRef(false);
 	return (
 		<div>
-			<LowCodeContext.Provider value={providerValues}>
+			<LowCodeContextProvider value={providerValues}>
 				<DndProvider backend={HTML5Backend}>
 					<div style={{ display: 'grid', gridTemplateColumns: '35%  30% auto' }}>
 						<MonacoEditor
@@ -233,10 +224,15 @@ const Index: React.FC = props => {
 								_edit.onDidChangeCursorSelection(e => {
 									onCursorSelection(e?.selection);
 								});
+								_edit.onDidFocusEditorText(e => {
+									isFocusedRef.current = true;
+								});
+								_edit.onDidBlurEditorText(e => {
+									isFocusedRef.current = false;
+								});
 							}}
 							onChange={e => {
-								if (monacoChangeLock.current) {
-									monacoChangeLock.current = false;
+								if (!isFocusedRef.current) {
 									return;
 								}
 								setCode(e);
@@ -339,7 +335,7 @@ const Index: React.FC = props => {
 						</div>
 					</div>
 				</DndProvider>
-			</LowCodeContext.Provider>
+			</LowCodeContextProvider>
 		</div>
 	);
 };

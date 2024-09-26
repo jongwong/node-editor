@@ -3,11 +3,14 @@ import { useDrag, useDrop } from 'react-dnd';
 
 import classNames from 'classnames';
 
-import { LowCodeContext } from '@/ASTEditor/ASTExplorer/useLowCodeContext';
+import { useLowCodeInstance } from '@/ASTEditor/ASTExplorer/useLowCodeContext';
 import { EOperationClassName } from '@/ASTEditor/constants';
+import { getJSXElementName } from '@/ASTEditor/util/ast-node';
 import { hasDraggingElement } from '@/ASTEditor/util/dom';
 import { addClassName, removeClassName } from '@/ASTEditor/util/dom/class-operation';
 import { hasClassName } from '@/util';
+
+import ErrorBound from '../ErrorBound';
 
 type LowCodeDragItemProps = {
 	children?: React.ReactNode;
@@ -17,10 +20,10 @@ type LowCodeDragItemProps = {
 const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 	// eslint-disable-next-line react/prop-types
 	const { _low_code_child_id, _low_code_id, ...rest } = props;
-	const { dataMap, onComponentDoubleClick, currentItemId, onItemHover, astJson, onAstChange } =
-		useContext(LowCodeContext);
-	const curData = dataMap?.[_low_code_id];
-	const name = dataMap[_low_code_child_id]?.name;
+	const { getNodeById, onComponentDoubleClick, currentItemId } = useLowCodeInstance();
+	const curData = getNodeById(_low_code_id);
+	const childNode = getNodeById(_low_code_child_id);
+	const name = childNode ? getJSXElementName(childNode) : '';
 	const [{ isDragging }, dragRef, previewRef] = useDrag(() => ({
 		type: 'LowCodeDragItem',
 		item: { uuid: _low_code_id, name },
@@ -60,7 +63,8 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 				overflow: isDragging || isSelect ? 'auto' : undefined,
 			}}
 			onDoubleClick={e => {
-				onComponentDoubleClick?.(props, curData);
+				const _curData = getNodeById(_low_code_child_id);
+				onComponentDoubleClick?.(props, _curData);
 
 				e.stopPropagation();
 				e.preventDefault();
@@ -91,7 +95,7 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 			<span className={'low-code-target-item__menu'}>
 				<span>{name}</span>
 			</span>
-			{props.children}
+			<ErrorBound>{props.children}</ErrorBound>
 		</div>
 	);
 };

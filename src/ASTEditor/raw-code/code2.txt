@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { Form, Input, Button } from 'antd';
+import { Form, Input, Button,Card } from 'antd';
 
 const { Item } = Form;
 
@@ -26,6 +26,7 @@ const Index = (): React.ReactNode => {
 						<Button>提交</Button>
 					</Item>
 			</Form>
+			<Card title="22"></Card>
 		</div>
 	);
 };

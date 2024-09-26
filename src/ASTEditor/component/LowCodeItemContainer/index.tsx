@@ -14,7 +14,7 @@ import {
 import classNames from 'classnames';
 import { findLastIndex, get, last, set, take, toPath } from 'lodash';
 
-import { LowCodeContext } from '@/ASTEditor/ASTExplorer/useLowCodeContext';
+import { useLowCodeInstance } from '@/ASTEditor/ASTExplorer/useLowCodeContext';
 import { EDragItemType } from '@/ASTEditor/constants';
 import { addEditMark, removeEditMark, removeEditMarkAst } from '@/ASTEditor/util';
 import { findNodeByUid, getJSXElementName, wrapperJSXElement } from '@/ASTEditor/util/ast-node';
@@ -26,17 +26,10 @@ type LowCodeItemContainerProps = {
 
 const LowCodeItemContainer: React.FC<LowCodeItemContainerProps> = props => {
 	// eslint-disable-next-line react/prop-types
-	const { _low_code_id: uuid, ...rest } = props;
-	const { astJson, onAstChange, clearMap, dataMap } = useContext(LowCodeContext);
-
-	const { curData, parentNode } = useMemo(() => {
-		const find = findNodeByUid(astJson, uuid);
-		const parentNode = get(astJson, take(find.pathList, find.pathList.length - 2));
-		return {
-			curData: find.node,
-			parentNode: parentNode,
-		};
-	}, [astJson, uuid]);
+	const { _low_code_id: uuid, _parent_uid, ...rest } = props;
+	const { getNodeById, ast: astJson } = useLowCodeInstance();
+	const curData = getNodeById(uuid);
+	const parentNode = getNodeById(_parent_uid);
 
 	const onItemDrop = item => {
 		const targetFind = findNodeByUid(astJson, uuid);
@@ -46,7 +39,7 @@ const LowCodeItemContainer: React.FC<LowCodeItemContainerProps> = props => {
 		set(astJson, moveFind?.pathList, targetFind.node);
 		set(astJson, targetFind.pathList, moveFind.node);
 
-		onAstChange?.(astJson);
+		updateAst?.(astJson);
 	};
 	const onMaterialItemDrop = item => {
 		const importName = item?.materialData?.import;
@@ -98,8 +91,10 @@ const LowCodeItemContainer: React.FC<LowCodeItemContainerProps> = props => {
 		const newElNode = wrapperJSXElement(name, child);
 
 		const targetFind = findNodeByUid(astJson, uuid);
-		set(astJson, targetFind.pathList, newElNode);
-		onAstChange(astJson);
+		if (targetFind?.pathList) {
+			set(astJson, targetFind.pathList, newElNode);
+		}
+		updateAst(astJson);
 	};
 	const [{ isOver, isOverCurrent }, dropRef] = useDrop(
 		() => ({

@@ -1,3 +1,4 @@
+import traverse from '@babel/traverse';
 import {
 	JSXAttribute,
 	jsxAttribute,
@@ -93,58 +94,29 @@ const getLiteralName = node => {
 	return node.name.name;
 };
 
-export const createNewContainer = (pUid: string) => {
-	const firstUuid = uuid();
+export const createNewContainer = (pUid: string, cUid: string) => {
 	const _node = wrapperJSXElement(
 		'LowCodeItemContainer',
 		[],
 		[
-			jsxAttribute(jsxIdentifier('_low_code_id'), stringLiteral(firstUuid)),
-			jsxAttribute(jsxIdentifier('_low_code_name'), stringLiteral('LowCodeItemContainer')),
 			jsxAttribute(jsxIdentifier('_parent_uid'), stringLiteral(pUid)),
+			jsxAttribute(jsxIdentifier('_low_code_id'), stringLiteral(cUid)),
 		],
 		true
 	);
-	_node._low_code_id = firstUuid;
+	_node._low_code_id = cUid;
 	return _node;
 };
-export const findNodeByUid = (node, uuid, parentKey = []) => {
+export const findNodeByUid = (node, uuid) => {
 	let find: any;
 
-	if (isObject(node)) {
-		if (node._low_code_id === uuid) {
-			return {
-				node,
-				pathList: parentKey,
-			};
-		}
-		if (getJSXElementName(node) === 'LowCodeDragItem') {
-			const find = node.openingElement?.attributes?.find(it => it?.name?.name === '_low_code_id');
-			if (find?.value?.value === uuid) {
-				return {
-					node,
-					pathList: parentKey,
-				};
+	traverse(node, {
+		enter: path => {
+			if (uuid && getUUidByNode(path.node) === uuid) {
+				find = path.getPathLocation();
 			}
-		}
-
-		// eslint-disable-next-line array-callback-return
-		Object.keys(node).some(key => {
-			const it = node[key];
-			find = findNodeByUid(it, uuid, [...parentKey, key]);
-			return find;
-		});
-	}
-	if (isArray(node)) {
-		// eslint-disable-next-line array-callback-return
-		node.some((it, idx) => {
-			if (!find) {
-				find = findNodeByUid(it, uuid, [...parentKey, idx]);
-				return find;
-			}
-		});
-	}
-
+		},
+	});
 	return find;
 };
 
@@ -158,4 +130,157 @@ export const updateJexTextNode = (node, val: string) => {
 	const raw = node.extra.raw;
 	node.extra.raw = raw[0] + val + raw[raw.lenght - 1];
 	return node;
+};
+
+export const findAdjacentJSXElements = (index: number, siblings: any) => {
+	let prevIndex = index;
+	let nextIndex = index;
+
+	// 查找前一个相邻的 JSXElement
+	while (prevIndex > 0 && siblings[prevIndex - 1].type !== 'JSXElement') {
+		prevIndex--;
+	}
+	if (prevIndex > 0) {
+		prevIndex--; // 返回到上一个 JSXElement 的索引
+	}
+
+	// 查找后一个相邻的 JSXElement
+	while (nextIndex < siblings.length - 1 && siblings[nextIndex + 1].type !== 'JSXElement') {
+		nextIndex++;
+	}
+	if (nextIndex < siblings.length - 1) {
+		nextIndex++; // 返回到下一个 JSXElement 的索引
+	}
+
+	return {
+		preIndex: prevIndex < 0 ? 0 : prevIndex,
+		nextIndex: nextIndex >= siblings.length ? siblings.length : nextIndex,
+	};
+};
+export const setAttribute = (node, attributeName, attributeValue) => {
+	// 创建一个新的节点，复制原有节点的属性
+	const newNode = {
+		...node,
+		attributes: node.attributes ? [...node.attributes] : [], // 确保属性存在
+	};
+
+	// 查找现有属性
+	const existingAttributeIndex = newNode.attributes.findIndex(
+		attr => attr.name.name === attributeName
+	);
+
+	if (existingAttributeIndex !== -1) {
+		// 如果属性存在，更新其值
+		newNode.attributes[existingAttributeIndex].value = {
+			type: 'StringLiteral', // 根据需要调整类型
+			value: attributeValue,
+		};
+	} else {
+		// 如果属性不存在，添加新属性
+		newNode.attributes.push({
+			type: 'JSXAttribute',
+			name: {
+				type: 'JSXIdentifier',
+				name: attributeName,
+			},
+			value: {
+				type: 'StringLiteral', // 根据需要调整类型
+				value: attributeValue,
+			},
+		});
+	}
+
+	return newNode; // 返回新的节点
+};
+export const getAttributeValue = (node, attributeName) => {
+	if (node.attributes) {
+		const attribute = node.attributes.find(attr => attr.name.name === attributeName);
+		if (attribute && attribute.value && attribute.value.type === 'StringLiteral') {
+			return attribute.value.value; // 返回属性值
+		}
+	}
+	return ''; // 如果属性不存在，返回空字符串
+};
+export const getJsxNameAndImport = (node, ast) => {
+	if (node.type === 'JSXElement') {
+		const name = node.openingElement.name;
+
+		// 获取组件名称
+		const componentName = name.type === 'JSXIdentifier' ? name.name : name.name.name;
+
+		// 查找所有 ImportDeclaration
+		const imports = ast.program.body.filter(statement => statement.type === 'ImportDeclaration');
+
+		// 首先检查直接导入
+		const importEntry = imports.find(entry =>
+			entry.specifiers.some(spec => {
+				if (spec.type === 'ImportSpecifier' && spec.local.name === componentName) {
+					return true;
+				}
+				// 处理 { Item } = Form 的情况
+				if (spec.type === 'ImportDefaultSpecifier' && spec.local.name === componentName) {
+					return true;
+				}
+				return false;
+			})
+		);
+
+		if (importEntry) {
+			return {
+				name: componentName,
+				import: importEntry.source.value, // 返回从语句的源路径
+			};
+		}
+
+		// 如果没有直接的 Import, 检查变量声明
+		const variableDeclarations = ast.program.body.filter(
+			statement => statement.type === 'VariableDeclaration'
+		);
+
+		for (const declaration of variableDeclarations) {
+			for (const decl of declaration.declarations) {
+				if (decl.init && decl.init.type === 'MemberExpression') {
+					const { object, property } = decl.init;
+					if (property.name === componentName) {
+						const relatedImport = imports.find(entry =>
+							entry.specifiers.some(spec => spec.local.name === object.name)
+						);
+						if (relatedImport) {
+							return {
+								name: componentName,
+								import: relatedImport.source.value, // 相关导入路径
+							};
+						}
+					}
+				}
+			}
+		}
+
+		// 处理结构赋值的情况
+		const assignments = variableDeclarations.find(statement =>
+			statement.declarations.some(
+				decl =>
+					decl.id.type === 'ObjectPattern' &&
+					decl.id.properties.some(prop => prop.key.name === componentName)
+			)
+		);
+
+		if (assignments) {
+			const assignedName = assignments.declarations[0].init.name; // 赋值的对象名
+			const relatedImport = imports.find(entry =>
+				entry.specifiers.some(spec => spec.local.name === assignedName)
+			);
+			if (relatedImport) {
+				return {
+					name: componentName,
+					import: relatedImport.source.value, // 相关导入路径
+				};
+			}
+		}
+	}
+
+	return null; // 如果不是 JSXElement，返回 null
+};
+export const getUUidByNode = node => {
+	return node?._low_code_id;
 };

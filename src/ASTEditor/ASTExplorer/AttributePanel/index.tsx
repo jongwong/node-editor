@@ -4,7 +4,9 @@ import { useUpdate } from 'ahooks';
 import { Button, Form, Input, Radio, Select } from 'antd';
 import { forEach, forIn, set, values } from 'lodash';
 
-import { LowCodeContext } from '@/ASTEditor/ASTExplorer/useLowCodeContext';
+import { useLowCodeInstance } from '@/ASTEditor/ASTExplorer/useLowCodeContext';
+import { getJsxNameAndImport } from '@/ASTEditor/util/ast-node';
+import { updateAttributeValue } from '@/ASTEditor/util/operation';
 
 const { Item } = Form;
 const valueTypeMap = {
@@ -37,19 +39,35 @@ type AttributePanelProps = {
 const AttributePanel: React.FC<AttributePanelProps> = props => {
 	const { code, ...rest } = props;
 	const [form] = Form.useForm();
-	const { dataMap, astJson, currentItemId, onAstChange, currentItemChildId, getAttributeValues } =
-		useContext(LowCodeContext);
-	const data = useMemo(
-		() => (dataMap[currentItemId] ? dataMap[currentItemId] : {}),
-		[dataMap, currentItemId]
+	const {
+		currentItemChildId,
+		getNodeById,
+		getPathById,
+		getAttributeValues,
+		getAst,
+		updateAst,
+		getMaterialStore,
+	} = useLowCodeInstance();
+	const curNode = useMemo(
+		() => (currentItemChildId ? getNodeById(currentItemChildId) : undefined),
+		[currentItemChildId]
 	);
-	const forceUpdate = useUpdate();
 	const oldValueMap = useRef({});
+	const attribute = useMemo(() => {
+		if (!curNode) {
+			return [];
+		}
+		const re = getJsxNameAndImport(curNode, getAst());
+		const find = getMaterialStore().data.find(
+			it => it?.name === re?.name && it?.import === re?.import
+		);
+		return find?.attribute || [];
+	}, [curNode]);
 	useEffect(() => {
 		form.resetFields();
 		const map = getAttributeValues();
 
-		forEach(data?.config?.attribute || [], (it, idx) => {
+		forEach(attribute, (it, idx) => {
 			const ob = {
 				name: it.name,
 				value: map[it.name],
@@ -57,9 +75,8 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 			form.setFields([ob]);
 		});
 		oldValueMap.current = map;
-	}, [currentItemChildId, data]);
+	}, [attribute]);
 
-	const attribute = data?.config?.attribute || [];
 	const getRender = it => {
 		if (it.valueEnum) {
 			const op = values(it.valueEnum);
@@ -67,40 +84,36 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 		}
 		return valueTypeMap[it.valueType]?.renderFormItem?.();
 	};
+
 	return (
-		<Form form={form} style={{ paddingRight: '24px' }}>
+		<Form
+			form={form}
+			style={{ paddingRight: '24px' }}
+			onValuesChange={(changedValues, values) => {
+				const ob = changedValues;
+				if (Object.keys(ob).length) {
+					const find = attribute?.find(it => it?.withTextChildren);
+
+					const _path = getPathById(currentItemChildId);
+					const newAst = updateAttributeValue(
+						curNode,
+						_path,
+						getAst(),
+						ob,
+						find ? { name: find?.name, oldValue: oldValueMap?.current?.[find.name] } : undefined
+					);
+					if (newAst) {
+						oldValueMap.current = form.getFieldsValue(true);
+						updateAst?.(newAst);
+					}
+				}
+			}}
+		>
 			{attribute?.map(it => (
 				<Item name={it.name} key={it.name} label={it.name}>
 					{getRender(it)}
 				</Item>
 			))}
-			<Item>
-				<Button
-					type="primary"
-					onClick={() => {
-						const ob = {};
-						forEach(attribute || [], (it, key) => {
-							const val = form.getFieldValue(it.name);
-							if (form.isFieldTouched(it.name)) {
-								ob[it.name] = val;
-							}
-						});
-						if (Object.keys(ob).length) {
-							const find = attribute?.find(it => it?.withTextChildren);
-							const newAst = data?.event?.updateAttributeValue(
-								astJson,
-								ob,
-								find ? { name: find?.name, oldValue: oldValueMap?.current?.[find.name] } : undefined
-							);
-							if (newAst) {
-								onAstChange?.(newAst);
-							}
-						}
-					}}
-				>
-					保存
-				</Button>
-			</Item>
 		</Form>
 	);
 };

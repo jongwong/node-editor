@@ -2,7 +2,6 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 
 import { getMaterialModule } from '@/ASTEditor/ASTExplorer/MaterialPanel/utils';
-import { LowCodeContext } from '@/ASTEditor/ASTExplorer/useLowCodeContext';
 import { EDragItemType } from '@/ASTEditor/constants';
 import { addClassName, removeClassName } from '@/ASTEditor/util/dom/class-operation';
 
@@ -11,8 +10,6 @@ const MaterialItem: React.FC<{
 	children?: React.ReactNode;
 }> = props => {
 	const { data, ...rest } = props;
-	const { dataMap, onComponentDoubleClick, currentItemId, onItemHover, astJson, onAstChange } =
-		useContext(LowCodeContext);
 	const [ModuleState, setModuleState] = useState<any>();
 	const [{ isDragging }, dragRef, previewRef] = useDrag(() => ({
 		type: EDragItemType.MaterialItem,

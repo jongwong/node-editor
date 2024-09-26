@@ -1,21 +1,25 @@
-import React, { createContext, useCallback, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import generate from '@babel/generator';
 import { useDebounceFn } from 'ahooks';
-import { isNumber, isString } from 'lodash';
+import { get, isNumber, isString } from 'lodash';
 
+import materialStore from '@/ASTEditor/ASTExplorer/material-store';
+import useProState from '@/ASTEditor/hooks/useProState';
 import {
+	addAttrMarkByAst,
 	addEditMark,
 	generateCode,
+	getNodeUIDPathMap,
 	prettierFormat,
 	removeEditMark,
 	removeEditMarkAst,
 } from '@/ASTEditor/util';
+import { findNodeByUid, getJSXElementName } from '@/ASTEditor/util/ast-node';
 import { initHoverEvent } from '@/ASTEditor/util/dom';
 
-export const LowCodeContext = createContext<{
+const LowCodeContext = createContext<{
 	astJson?: any;
-	dataMap?: any;
 	currentItemId?: string;
 	currentItemChildId?: string;
 	onComponentDoubleClick?: (
@@ -27,8 +31,46 @@ export const LowCodeContext = createContext<{
 		}
 	) => void;
 }>({});
+export const LowCodeContextProvider = LowCodeContext.Provider;
 
-const useLowCodeContext = ({
+type InstanceReturnType = {
+	currentItemId: string | undefined;
+	getAttributeValues: () => Record<string, any>;
+	getNodeById: (id: string) => any | undefined;
+	onComponentDoubleClick: () => void;
+};
+export const useLowCodeInstance: () => InstanceReturnType = () => {
+	const { astJson, currentItemId, updateAst, transformCode, currentItemChildId, getDataInstance } =
+		useContext(LowCodeContext);
+	const instance = getDataInstance();
+	const getPathById = (id: string) => {
+		const ob = instance.getNonePathMap();
+		const find = ob[id]?.path;
+
+		if (find) {
+			return find;
+		}
+		return findNodeByUid(instance.getAstJson(), id);
+	};
+	return {
+		currentItemId,
+		getAttributeValues: () => instance.getAttributeValues(),
+		currentItemChildId,
+		transformCode,
+		ast: astJson,
+		getMaterialStore: () => materialStore,
+		getAst: () => instance.getAstJson(),
+		getNodeById: (id, test) => {
+			const _path = getPathById(id);
+			const ast = instance.getAstJson();
+			return get(ast, _path);
+		},
+		getPathById,
+		onComponentDoubleClick: instance.onComponentDoubleClick,
+		updateAst: instance.updateAst,
+	};
+};
+export default ({
 	preElement,
 	onCodeChange,
 }: {
@@ -40,24 +82,32 @@ const useLowCodeContext = ({
 	reload: any;
 	providerValues: any;
 	astJson: any;
-	setDataMap: any;
 	transformCode: string;
+	transform: (code: string) => string;
 } => {
 	const [currentItemId, setCurrentItemId] = useState();
 	const [currentItemChildId, setCurrentItemChildId] = useState();
 	const curAttributeValuesRef = useRef({});
-	const [astJson, setAstJson] = useState({});
+	const idNonePathMap = useRef({});
+	const [astJson, _setAstJson, getAstJson] = useProState({});
+	const { run: debounceReload } = useDebounceFn(() => reloadHover(), { wait: 500, leading: false });
+	const [transformCode, setTransformCode] = useState('');
+	const setAstJson = e => {
+		idNonePathMap.current = getNodeUIDPathMap(e);
+		_setAstJson(e);
+	};
+
 	const [hoverItemIdMap, setHoverItemMap] = useState({});
-	const [dataMap, setDataMap] = useState({});
 	const changeAst = e => {
-		const out = generateCode(e, transformCode);
-		const _code = prettierFormat(out.code);
-
-		const formatCodeOutput = removeEditMark(_code);
-		const code = prettierFormat(formatCodeOutput.code);
-
+		const newAst = addAttrMarkByAst(e);
+		const formatCodeOutput = generateCode(newAst, transformCode);
+		const _code = prettierFormat(formatCodeOutput.code);
 		setTransformCode(_code);
-		onCodeChange?.(code);
+		const noReMarkAst = removeEditMarkAst(e);
+		const noReMarkOutput = generateCode(noReMarkAst, _code);
+		const noReMarkCode = prettierFormat(noReMarkOutput.code);
+
+		onCodeChange?.(noReMarkCode);
 	};
 	const reloadHover = () => {
 		if (!preElement) {
@@ -73,42 +123,50 @@ const useLowCodeContext = ({
 	};
 
 	const transform = (e: string) => {
-		const { outputCode, transformDataMap: _transformDataMap, ast } = addEditMark(e);
-		setDataMap(_transformDataMap);
+		const { outputCode, ast } = addEditMark(e);
 		setAstJson(ast);
+		setCurrentItemId(undefined);
+		setCurrentItemChildId(undefined);
+		curAttributeValuesRef.current = {};
 		setTransformCode(outputCode);
+		return outputCode;
 	};
-	const { run: debounceReload } = useDebounceFn(() => reloadHover(), { wait: 500, leading: false });
-	const [transformCode, setTransformCode] = useState('');
+
 	const providerValues = {
-		dataMap,
 		currentItemId,
 		currentItemChildId,
-		reCalculateEditMark: e => {
-			setCurrentItemId(undefined);
-			setCurrentItemChildId(undefined);
-			setDataMap({});
-			const _ast = removeEditMarkAst(e);
-			const { outputCode, transformDataMap, ast } = addEditMark(_ast);
-			setAstJson(ast);
-		},
-		onComponentDoubleClick: (_props, curData) => {
-			const { _low_code_id, _low_code_child_id, children } = _props;
-			const hasText = curData?.config?.attribute?.find(it => it?.withTextChildren);
-			const _children = children?.props?.children;
-			const findIndex = hasText ? _children?.findIndex(it => isString(it) || isNumber(it)) : -1;
-			const _attributeValue = {
-				...children.props,
-				children: findIndex >= 0 ? _children[findIndex] : undefined,
-			};
+		transformCode,
+		getDataInstance: () => {
+			return {
+				getAstJson: () => getAstJson(),
+				getAttributeValues: () => {
+					return curAttributeValuesRef.current;
+				},
+				getNonePathMap: () => {
+					return idNonePathMap.current;
+				},
+				updateAst: changeAst,
+				onComponentDoubleClick: (_props, curData) => {
+					const { _low_code_id, _low_code_child_id, children } = _props;
 
-			curAttributeValuesRef.current = _attributeValue;
-			setCurrentItemId(_low_code_id);
-			setCurrentItemChildId(_low_code_child_id);
-		},
-		onAstChange: changeAst,
-		getAttributeValues: () => {
-			return curAttributeValuesRef.current;
+					const name = getJSXElementName(curData);
+					const _config = materialStore.data?.find(it => it.name === name);
+
+					const hasText = _config?.attribute?.find(it => it?.withTextChildren);
+
+					const _children = children?.props?.children;
+					const findIndex = hasText ? _children?.findIndex(it => isString(it) || isNumber(it)) : -1;
+					const _attributeValue = {
+						...children.props,
+						children: findIndex >= 0 ? _children[findIndex] : undefined,
+					};
+
+					curAttributeValuesRef.current = _attributeValue;
+
+					setCurrentItemId(_low_code_id);
+					setCurrentItemChildId(_low_code_child_id);
+				},
+			};
 		},
 		astJson: astJson,
 		hoverItemIdMap,
@@ -125,4 +183,3 @@ const useLowCodeContext = ({
 		transform,
 	};
 };
-export default useLowCodeContext;
