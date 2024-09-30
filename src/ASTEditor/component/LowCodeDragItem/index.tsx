@@ -19,14 +19,18 @@ type LowCodeDragItemProps = {
 
 const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 	// eslint-disable-next-line react/prop-types
-	const { _low_code_child_id, _low_code_id, ...rest } = props;
-	const { getNodeById, onComponentDoubleClick, currentItemId } = useLowCodeInstance();
+	const { _low_code_child_id, _low_code_id, _low_code_parent_id, ...rest } = props;
+
+	const { getNodeById, onComponentDoubleClick, getPathKeyById, currentItemId } =
+		useLowCodeInstance();
+
 	const curData = getNodeById(_low_code_id);
 	const childNode = getNodeById(_low_code_child_id);
+
 	const name = childNode ? getJSXElementName(childNode) : '';
 	const [{ isDragging }, dragRef, previewRef] = useDrag(() => ({
 		type: 'LowCodeDragItem',
-		item: { uuid: _low_code_id, name },
+		item: { uuid: _low_code_id, parentId: _low_code_parent_id, name },
 		canDrag: () => {
 			setTimeout(() => {
 				addClassName(document.body, 'low-code-container__dragging');
@@ -45,6 +49,7 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 	const elRef = useRef<HTMLElement>();
 
 	const isSelect = currentItemId === _low_code_id;
+
 	return (
 		<div
 			className={classNames(
@@ -64,6 +69,7 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 			}}
 			onDoubleClick={e => {
 				const _curData = getNodeById(_low_code_child_id);
+
 				onComponentDoubleClick?.(props, _curData);
 
 				e.stopPropagation();

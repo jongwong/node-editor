@@ -26,7 +26,15 @@ const Index = (): React.ReactNode => {
 						<Button>提交</Button>
 					</Item>
 			</Form>
-			<Card title="22"></Card>
+			{/* Card */}
+			<Card title="22">
+			<Button>Button 1</Button>
+				{/* Button 2 */}
+				<Button>Button 2</Button>
+			222
+			22
+			34
+			</Card>
 		</div>
 	);
 };

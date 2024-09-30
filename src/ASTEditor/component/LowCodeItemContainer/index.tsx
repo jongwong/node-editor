@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useDrag, useDragLayer, useDrop } from 'react-dnd';
 
-import traverse from '@babel/traverse';
+import traverse, { NodePath } from '@babel/traverse';
 import {
 	importDeclaration,
 	importDefaultSpecifier,
@@ -12,11 +12,16 @@ import {
 	stringLiteral,
 } from '@babel/types';
 import classNames from 'classnames';
-import { findLastIndex, get, last, set, take, toPath } from 'lodash';
+import { findIndex, findLastIndex, get, last, set, take, toPath } from 'lodash';
 
 import { useLowCodeInstance } from '@/ASTEditor/ASTExplorer/useLowCodeContext';
 import { EDragItemType } from '@/ASTEditor/constants';
-import { addEditMark, removeEditMark, removeEditMarkAst } from '@/ASTEditor/util';
+import {
+	addEditMark,
+	reInsertContainer,
+	removeEditMark,
+	removeEditMarkAst,
+} from '@/ASTEditor/util';
 import { findNodeByUid, getJSXElementName, wrapperJSXElement } from '@/ASTEditor/util/ast-node';
 
 type LowCodeItemContainerProps = {
@@ -26,22 +31,38 @@ type LowCodeItemContainerProps = {
 
 const LowCodeItemContainer: React.FC<LowCodeItemContainerProps> = props => {
 	// eslint-disable-next-line react/prop-types
-	const { _low_code_id: uuid, _parent_uid, ...rest } = props;
-	const { getNodeById, ast: astJson } = useLowCodeInstance();
-	const curData = getNodeById(uuid);
-	const parentNode = getNodeById(_parent_uid);
-
+	const { _low_code_id: uuid, _low_code_parent_id, ...rest } = props;
+	const {
+		getAst,
+		astJson: astJsonData,
+		getNodeById,
+		getPathKeyById,
+		getPathById,
+		updateAst,
+	} = useLowCodeInstance();
+	const parentNode = getNodeById(_low_code_parent_id);
 	const onItemDrop = item => {
-		const targetFind = findNodeByUid(astJson, uuid);
+		const astJson = getAst();
+		const movePath = getPathById(item.uuid);
 
-		const moveFind = findNodeByUid(astJson, item.uuid);
+		const moveNode = getNodeById(item.uuid);
+		const moveParentNode = getNodeById(item.parentId);
+		const targetPrentKey = getPathKeyById(_low_code_parent_id);
+		const targetNode = getNodeById(uuid);
+		const targetParentNode = getNodeById(_low_code_parent_id);
+		targetParentNode.children.splice(targetNode.key, 0, moveNode);
+		const curIndex = movePath?.key;
+		moveParentNode.children = moveParentNode.children.filter((it, idx) => idx !== curIndex);
 
-		set(astJson, moveFind?.pathList, targetFind.node);
-		set(astJson, targetFind.pathList, moveFind.node);
+		moveParentNode.children = reInsertContainer(moveParentNode);
+		set(astJson, moveParentNode, moveParentNode);
+
+		set(astJson, targetPrentKey, targetParentNode);
 
 		updateAst?.(astJson);
 	};
 	const onMaterialItemDrop = item => {
+		const astJson = getAst();
 		const importName = item?.materialData?.import;
 		const name = item?.materialData?.name;
 		let find = false;
@@ -115,15 +136,14 @@ const LowCodeItemContainer: React.FC<LowCodeItemContainerProps> = props => {
 				};
 			},
 		}),
-		[astJson, uuid]
+		[astJsonData, uuid]
 	);
-
 	return (
 		<div
 			className={classNames('low-code-container', isOverCurrent && 'low-code-container__dropping')}
 			ref={dropRef}
 		>
-			<span>{isOverCurrent ? `${parentNode?.openingElement?.name?.name}` : null}</span>
+			<span>{isOverCurrent ? `${getJSXElementName(parentNode)}` : null}</span>
 		</div>
 	);
 };

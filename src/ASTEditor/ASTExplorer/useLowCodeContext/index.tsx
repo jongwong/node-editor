@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import generate from '@babel/generator';
+import { NodePath } from '@babel/traverse';
 import { useDebounceFn } from 'ahooks';
 import { get, isNumber, isString } from 'lodash';
 
@@ -38,14 +39,16 @@ type InstanceReturnType = {
 	getAttributeValues: () => Record<string, any>;
 	getNodeById: (id: string) => any | undefined;
 	onComponentDoubleClick: () => void;
+	getPathKeyById: (id: string) => string | undefined;
+	getPathById: (id: string) => NodePath | undefined;
 };
 export const useLowCodeInstance: () => InstanceReturnType = () => {
 	const { astJson, currentItemId, updateAst, transformCode, currentItemChildId, getDataInstance } =
 		useContext(LowCodeContext);
 	const instance = getDataInstance();
-	const getPathById = (id: string) => {
+	const getPathKeyById = (id: string) => {
 		const ob = instance.getNonePathMap();
-		const find = ob[id]?.path;
+		const find = ob[id]?.pathKey;
 
 		if (find) {
 			return find;
@@ -61,11 +64,17 @@ export const useLowCodeInstance: () => InstanceReturnType = () => {
 		getMaterialStore: () => materialStore,
 		getAst: () => instance.getAstJson(),
 		getNodeById: (id, test) => {
-			const _path = getPathById(id);
+			const _path = getPathKeyById(id);
 			const ast = instance.getAstJson();
 			return get(ast, _path);
 		},
-		getPathById,
+		getTestNonePathMap: () => instance.getNonePathMap(),
+		getPathKeyById,
+		getPathById: (id: string) => {
+			const ob = instance.getNonePathMap();
+			const find = ob[id]?.path;
+			return find;
+		},
 		onComponentDoubleClick: instance.onComponentDoubleClick,
 		updateAst: instance.updateAst,
 	};
@@ -78,7 +87,6 @@ export default ({
 
 	preElement: HTMLElement | undefined;
 }): {
-	setAstJson: any;
 	reload: any;
 	providerValues: any;
 	astJson: any;
@@ -99,15 +107,18 @@ export default ({
 
 	const [hoverItemIdMap, setHoverItemMap] = useState({});
 	const changeAst = e => {
+		const formatCodeOutput1 = generateCode(e, transformCode);
 		const newAst = addAttrMarkByAst(e);
 		const formatCodeOutput = generateCode(newAst, transformCode);
 		const _code = prettierFormat(formatCodeOutput.code);
-		setTransformCode(_code);
+
 		const noReMarkAst = removeEditMarkAst(e);
 		const noReMarkOutput = generateCode(noReMarkAst, _code);
 		const noReMarkCode = prettierFormat(noReMarkOutput.code);
 
 		onCodeChange?.(noReMarkCode);
+		setAstJson(newAst);
+		setTransformCode(_code);
 	};
 	const reloadHover = () => {
 		if (!preElement) {
@@ -178,7 +189,6 @@ export default ({
 		providerValues,
 		astJson,
 		reload: debounceReload,
-		setAstJson,
 		transformCode,
 		transform,
 	};

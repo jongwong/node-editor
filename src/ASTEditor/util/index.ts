@@ -4,7 +4,7 @@ import generate from '@babel/generator';
 import { parse } from '@babel/parser';
 import traverse from '@babel/traverse';
 import { isJSX, jsxAttribute, jsxIdentifier, stringLiteral } from '@babel/types';
-import { forIn, isArray, isObject, set } from 'lodash';
+import { first, forIn, isArray, isNumber, isObject, keys, last, set } from 'lodash';
 import prettier, { BuiltInParsers, Options } from 'prettier';
 import { v4 as uuid } from 'uuid';
 
@@ -22,6 +22,8 @@ import {
 	updateJexTextNode,
 	wrapperJSXElement,
 } from '@/ASTEditor/util/ast-node';
+
+const isDebug = true;
 
 export const prettierFormat = (code: string) => {
 	return prettier.format(code, {
@@ -54,7 +56,8 @@ export const getNodeUIDPathMap = ast => {
 			const id = getUUidByNode(path.node);
 			if (id) {
 				ob[id] = {
-					path: path.getPathLocation(),
+					pathKey: path.getPathLocation(),
+					path: path,
 					name: getJSXElementName(path.node),
 				};
 			}
@@ -102,12 +105,18 @@ export const addAttrMarkByAst = ast => {
 
 			if (getJSXElementName(path.parent) !== 'LowCodeDragItem') {
 				const _uid = uuid();
+
+				const _node = isDebug
+					? updateAttribute(path?.node, '_low_code_id', stringLiteral(_uid))
+					: path.node;
+
 				const lowCodeDragItem = wrapperJSXElement(
 					'LowCodeDragItem',
-					[path.node],
+					[_node],
 					[
 						jsxAttribute(jsxIdentifier('_low_code_id'), stringLiteral(_uid)),
 						jsxAttribute(jsxIdentifier('_low_code_child_id'), stringLiteral(cUid)),
+						jsxAttribute(jsxIdentifier('_low_code_parent_id'), stringLiteral(pUid)),
 					]
 				);
 				lowCodeDragItem._low_code_id = _uid;
@@ -116,32 +125,8 @@ export const addAttrMarkByAst = ast => {
 			}
 		},
 		exit(path) {
-			if (path.node.type === 'JSXElement' && getJSXElementName(path.node) === 'LowCodeDragItem') {
-				const siblings = path.parent?.children || [];
-				const index = siblings.indexOf(path.node);
-				const pId = getUUidByNode(path.parent);
-
-				const { preIndex, nextIndex } = findAdjacentJSXElements(index, siblings);
-				if (getJSXElementName(siblings[preIndex]) !== 'LowCodeItemContainer') {
-					const lowCodeItemContainer = createNewContainer(pId, uuid());
-					siblings.splice(preIndex, 0, lowCodeItemContainer); // 插入到当前 LowCodeDragItem 前
-				}
-
-				if (
-					nextIndex !== preIndex &&
-					getJSXElementName(siblings[nextIndex]) !== 'LowCodeItemContainer'
-				) {
-					const lowCodeItemContainer = createNewContainer(pId, uuid());
-					siblings.splice(nextIndex, 0, lowCodeItemContainer); // 插入到当前 LowCodeDragItem 后
-				}
-			}
-
 			if (path.node.type === 'JSXElement' && !isLowCodeElement(path.node)) {
-				const find = path.node?.children?.some(it => it.type === 'JSXElement');
-				if (!find) {
-					const lowCodeItemContainer = createNewContainer(getUUidByNode(path.node), uuid());
-					path.node?.children.push(lowCodeItemContainer);
-				}
+				path.node.children = reInsertContainer(path.node); // 更新子节点
 			}
 		},
 	});
@@ -192,4 +177,84 @@ const appendIndexPath = (parentPathString: string, idx: number) => {
 };
 const isLowCodeElement = node => {
 	return ['LowCodeDragItem', 'LowCodeItemContainer'].includes(getJSXElementName(node));
+};
+const isLowCodeContainer = node => {
+	return getJSXElementName(node) === 'LowCodeItemContainer';
+};
+const isEmptyTextText = _node => {
+	return _node && _node?.type === 'JSXText' && !_node?.value?.trim();
+};
+const isFullTextText = _node => {
+	return _node && _node?.type === 'JSXText' && _node?.value?.trim();
+};
+
+export const reInsertContainer = node => {
+	const _rawChildren = node?.children || [];
+
+	const repeatIndexList: number[] = _rawChildren
+		.map((it, idx) => {
+			if (isLowCodeContainer(it) && isLowCodeContainer(_rawChildren[idx + 1])) {
+				return idx + 1;
+			}
+
+			return -1;
+		})
+		.filter(it => it >= 0);
+	const children = _rawChildren.filter((it, idx) => !repeatIndexList.includes(idx));
+	const newChildren: any[] = [];
+
+	const containerIndexMap: any = {};
+	const JsxIndexMap: any = {};
+	const otherIndexMap: any = {};
+	const isValidJsx = _node => {
+		return _node?.type === 'JSXElement' || isFullTextText(_node);
+	};
+	children.forEach((item, idx) => {
+		if (isLowCodeContainer(item)) {
+			containerIndexMap[idx] = item;
+		} else if (isValidJsx(item)) {
+			JsxIndexMap[idx] = item;
+		} else {
+			otherIndexMap[idx] = item;
+		}
+	});
+	let isContainer = true;
+
+	let curRawIndex = 0;
+	let containerIndex = -1;
+	// JsxIndexMap的长度 + container的长度(比JsxIndexMap多一个) + 其他的
+	const len = keys(JsxIndexMap).length * 2 + 1 + keys(otherIndexMap).length;
+	for (let i = 0; i < len; i++) {
+		if (isContainer) {
+			const _node = containerIndexMap[i] || createNewContainer(getUUidByNode(node), uuid());
+			if (containerIndexMap[curRawIndex]) {
+				curRawIndex = curRawIndex + 1;
+			}
+			if (containerIndex >= 0) {
+				newChildren.splice(containerIndex, 0, _node);
+			} else {
+				newChildren.push(_node);
+			}
+
+			containerIndex = -1;
+			isContainer = false;
+		} else {
+			const find = JsxIndexMap[curRawIndex] || otherIndexMap[curRawIndex];
+			if (find) {
+				newChildren.push(find);
+			}
+			curRawIndex = curRawIndex + 1;
+			if (isValidJsx(find) || curRawIndex === children.length - 1) {
+				isContainer = true;
+			} else {
+				if (!isNumber(containerIndex)) {
+					containerIndex = i - 1;
+				}
+			}
+			if (curRawIndex === children.length - 1) {
+				containerIndex = -1;
+			}
+		}
+	}
+	return newChildren;
 };

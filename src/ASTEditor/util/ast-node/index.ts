@@ -69,8 +69,9 @@ export const wrapperJSXElement = (
 	);
 	return curNode;
 };
-export const updateAttribute = (attributes = [], name: string, value) => {
-	const idx = attributes.findIndex(nodeAttrIt => nodeAttrIt.name.name === name);
+export const updateAttribute = (node, name: string, value) => {
+	const attributes = node?.attributes || [];
+	const idx = attributes.findIndex(nodeAttrIt => nodeAttrIt?.name?.name === name);
 
 	const _ast = jsxAttribute(
 		{
@@ -87,7 +88,9 @@ export const updateAttribute = (attributes = [], name: string, value) => {
 	if (!value) {
 		return attributes.filter(it => it?.name?.name !== name);
 	}
-	return attributes;
+	node.attributes = attributes;
+
+	return node;
 };
 
 const getLiteralName = node => {
@@ -99,7 +102,7 @@ export const createNewContainer = (pUid: string, cUid: string) => {
 		'LowCodeItemContainer',
 		[],
 		[
-			jsxAttribute(jsxIdentifier('_parent_uid'), stringLiteral(pUid)),
+			jsxAttribute(jsxIdentifier('_low_code_parent_id'), stringLiteral(pUid)),
 			jsxAttribute(jsxIdentifier('_low_code_id'), stringLiteral(cUid)),
 		],
 		true

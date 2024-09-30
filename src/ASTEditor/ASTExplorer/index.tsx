@@ -29,7 +29,7 @@ import useLowCodeContext, {
 	LowCodeContextProvider,
 } from '@/ASTEditor/ASTExplorer/useLowCodeContext';
 import CodePreview from '@/ASTEditor/CodePreview';
-import { code2 } from '@/ASTEditor/raw-code';
+import rawCode from '@/ASTEditor/raw-code';
 import { addEditMark, generateCode, prettierFormat, removeEditMark } from '@/ASTEditor/util';
 
 import './index.less';
@@ -48,7 +48,7 @@ const modalPath = 'ASTExplorer/default';
 const Index: React.FC = props => {
 	const { ...rest } = props;
 
-	const [code, setCode] = useState(prettierFormat(code2 || ''));
+	const [code, setCode] = useState(prettierFormat(rawCode || ''));
 
 	const previewElRef = useRef<HTMLDivElement>();
 	const astJsonRef = useRef({});
@@ -207,7 +207,7 @@ const Index: React.FC = props => {
 	return (
 		<div>
 			<LowCodeContextProvider value={providerValues}>
-				<DndProvider backend={HTML5Backend}>
+				<DndProvider backend={HTML5Backend} context={window}>
 					<div style={{ display: 'grid', gridTemplateColumns: '35%  30% auto' }}>
 						<MonacoEditor
 							height="100vh"
@@ -265,7 +265,7 @@ const Index: React.FC = props => {
 									</div>
 								</Tabs.TabPane>
 								<Tabs.TabPane key="ast" tab="ast">
-									<div style={{ height: '100vh', overflow: 'scroll' }}>
+									<div style={{ height: '95vh', overflow: 'auto' }}>
 										<Input
 											value={searchNodeStr}
 											onChange={e => {

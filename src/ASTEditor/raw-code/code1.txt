@@ -1,7 +1,183 @@
 import React, { useState } from 'react';
+import { Form, Input, Button, Card } from 'antd';
+const { Item } = Form;
 interface DataType {
-  name?: string;
-  sex?: 1 | 2;
-  age?: number;
-  other?: Record<string, string>;
+	name?: string;
+	sex?: 1 | 2;
+	age?: number;
+	other?: Record<string, string>;
 }
+const Index = (): React.ReactNode => {
+	const [user, setUser] = useState<DataType>({});
+	return (
+		<div>
+			<LowCodeItemContainer
+				_low_code_parent_id="beea27fe-7dce-4f44-9dfc-7c799e3286cf"
+				_low_code_id="0e6edbfb-fafc-4762-889b-e474f611160d"
+			/>
+			<LowCodeDragItem
+				_low_code_id="43d4356c-445b-413a-9382-3c7db84ef499"
+				_low_code_child_id="db2e8079-f117-4cda-a37f-d45286ba8467"
+				_low_code_parent_id="beea27fe-7dce-4f44-9dfc-7c799e3286cf">
+				<Form>
+					<LowCodeItemContainer
+						_low_code_parent_id="db2e8079-f117-4cda-a37f-d45286ba8467"
+						_low_code_id="a4b60201-e360-4af3-bcb1-43f4206cc5ec"
+					/>
+					<LowCodeDragItem
+						_low_code_id="77b2064f-3ce1-48d8-8bef-f2e1a226bc4e"
+						_low_code_child_id="fd5edd53-1a60-431f-9fae-2671c24a6961"
+						_low_code_parent_id="db2e8079-f117-4cda-a37f-d45286ba8467">
+						<Item name="name" label="姓名">
+							<LowCodeItemContainer
+								_low_code_parent_id="fd5edd53-1a60-431f-9fae-2671c24a6961"
+								_low_code_id="3cacbddf-e11d-43b6-8c3d-ae32e8adf792"
+							/>
+							<LowCodeDragItem
+								_low_code_id="1218d060-154f-49fd-8ec0-201c860357b9"
+								_low_code_child_id="e2ca498d-0014-41a8-b6e8-ed1f919982be"
+								_low_code_parent_id="fd5edd53-1a60-431f-9fae-2671c24a6961">
+								<Input />
+							</LowCodeDragItem>
+							<LowCodeItemContainer
+								_low_code_parent_id="fd5edd53-1a60-431f-9fae-2671c24a6961"
+								_low_code_id="e9abac7d-3f31-4266-a451-a5228887ecc9"
+							/>
+						</Item>
+					</LowCodeDragItem>
+					<LowCodeItemContainer
+						_low_code_parent_id="db2e8079-f117-4cda-a37f-d45286ba8467"
+						_low_code_id="30043ea8-5fb6-4f51-887b-d0bcddd2d540"
+					/>
+					<LowCodeDragItem
+						_low_code_id="5838fb5b-db1d-44aa-85bf-4d2722392c5a"
+						_low_code_child_id="4ed09386-e872-4f9a-97e7-cbbcde296337"
+						_low_code_parent_id="db2e8079-f117-4cda-a37f-d45286ba8467">
+						<Item name="age" label="年龄" required={true}>
+							<LowCodeItemContainer
+								_low_code_parent_id="4ed09386-e872-4f9a-97e7-cbbcde296337"
+								_low_code_id="4d949a5d-d7f0-4d05-958c-b5a351487aa2"
+							/>
+							<LowCodeDragItem
+								_low_code_id="87ff41cf-bfd2-4592-8f91-02807ac23482"
+								_low_code_child_id="52ac2625-cdf5-4d0b-b3c3-e13265c8dc95"
+								_low_code_parent_id="4ed09386-e872-4f9a-97e7-cbbcde296337">
+								<Input />
+							</LowCodeDragItem>
+							<LowCodeItemContainer
+								_low_code_parent_id="4ed09386-e872-4f9a-97e7-cbbcde296337"
+								_low_code_id="54171ec8-c9df-4bc4-b6eb-6165e4415e05"
+							/>
+						</Item>
+					</LowCodeDragItem>
+					<LowCodeItemContainer
+						_low_code_parent_id="db2e8079-f117-4cda-a37f-d45286ba8467"
+						_low_code_id="bbc78dc1-467c-4347-b18e-0efb07f95772"
+					/>
+					<LowCodeDragItem
+						_low_code_id="bc38aa05-3d2a-4a80-a932-c3461a037cf4"
+						_low_code_child_id="93328c00-9900-4fb2-bdef-aee419879d65"
+						_low_code_parent_id="db2e8079-f117-4cda-a37f-d45286ba8467">
+						<Item>
+							<LowCodeItemContainer
+								_low_code_parent_id="93328c00-9900-4fb2-bdef-aee419879d65"
+								_low_code_id="a86d9139-118f-466f-947a-29bd194a2bc8"
+							/>
+							<LowCodeDragItem
+								_low_code_id="56f7cd2a-95c4-4001-b346-6826590af02d"
+								_low_code_child_id="655137e0-3013-488b-9c30-8af1c83145cf"
+								_low_code_parent_id="93328c00-9900-4fb2-bdef-aee419879d65">
+								<Button>
+									<LowCodeItemContainer
+										_low_code_parent_id="655137e0-3013-488b-9c30-8af1c83145cf"
+										_low_code_id="497ff6b6-8a8b-44c9-932f-ad9d940d5944"
+									/>
+									提交
+									<LowCodeItemContainer
+										_low_code_parent_id="655137e0-3013-488b-9c30-8af1c83145cf"
+										_low_code_id="29eb34e4-4bb8-49d5-8339-3fb2d88b94da"
+									/>
+								</Button>
+							</LowCodeDragItem>
+							<LowCodeItemContainer
+								_low_code_parent_id="93328c00-9900-4fb2-bdef-aee419879d65"
+								_low_code_id="50e7bc02-e768-4787-a3aa-8ad8bfbfa0aa"
+							/>
+						</Item>
+					</LowCodeDragItem>
+					<LowCodeItemContainer
+						_low_code_parent_id="db2e8079-f117-4cda-a37f-d45286ba8467"
+						_low_code_id="efeb4651-da53-4fa5-948d-908201eac0bf"
+					/>
+				</Form>
+			</LowCodeDragItem>
+			<LowCodeItemContainer
+				_low_code_parent_id="beea27fe-7dce-4f44-9dfc-7c799e3286cf"
+				_low_code_id="db297495-d0b0-40f1-ab90-a3d91359baaa"
+			/>
+			{/* Card */}
+			<LowCodeDragItem
+				_low_code_id="9709b673-e6a0-4617-a748-b35ffbb10823"
+				_low_code_child_id="164f4364-529f-4f9a-b306-136621227982"
+				_low_code_parent_id="beea27fe-7dce-4f44-9dfc-7c799e3286cf">
+				<Card title="22">
+					<LowCodeItemContainer
+						_low_code_parent_id="164f4364-529f-4f9a-b306-136621227982"
+						_low_code_id="c6deec10-5a97-4da7-986a-6f499aa33d48"
+					/>
+					<LowCodeDragItem
+						_low_code_id="8b0b9388-7216-4e7d-bf42-1c828bef8737"
+						_low_code_child_id="c7f0e31e-451f-4a90-89a9-00b562f54cbf"
+						_low_code_parent_id="164f4364-529f-4f9a-b306-136621227982">
+						<Button>
+							<LowCodeItemContainer
+								_low_code_parent_id="c7f0e31e-451f-4a90-89a9-00b562f54cbf"
+								_low_code_id="9b85b51f-9023-40a8-8c6c-82e88843dda0"
+							/>
+							Button 1
+							<LowCodeItemContainer
+								_low_code_parent_id="c7f0e31e-451f-4a90-89a9-00b562f54cbf"
+								_low_code_id="469ffacc-fc28-4845-91e4-f12e72538f35"
+							/>
+						</Button>
+					</LowCodeDragItem>
+					<LowCodeItemContainer
+						_low_code_parent_id="164f4364-529f-4f9a-b306-136621227982"
+						_low_code_id="15582da4-34e1-4519-a48f-daab2f80dae0"
+					/>
+					{/* Button 2 */}
+					<LowCodeDragItem
+						_low_code_id="cad232c1-f6f4-4fa6-8b98-6ebb6b6dd868"
+						_low_code_child_id="1ecc3fa0-a9c4-4f1c-aa52-412324d3242d"
+						_low_code_parent_id="164f4364-529f-4f9a-b306-136621227982">
+						<Button>
+							<LowCodeItemContainer
+								_low_code_parent_id="1ecc3fa0-a9c4-4f1c-aa52-412324d3242d"
+								_low_code_id="c798096a-bb93-4e5a-946b-1f2e18356679"
+							/>
+							Button 2
+							<LowCodeItemContainer
+								_low_code_parent_id="1ecc3fa0-a9c4-4f1c-aa52-412324d3242d"
+								_low_code_id="81c52494-6379-42ad-918e-d2ad0dc0d579"
+							/>
+						</Button>
+					</LowCodeDragItem>
+					<LowCodeItemContainer
+						_low_code_parent_id="164f4364-529f-4f9a-b306-136621227982"
+						_low_code_id="6df174b9-5baa-42e9-abed-77e4cc9c31d4"
+					/>
+					222 22 34
+					<LowCodeItemContainer
+						_low_code_parent_id="164f4364-529f-4f9a-b306-136621227982"
+						_low_code_id="b320bd5d-5370-4ed4-ad00-1d69b37214d4"
+					/>
+				</Card>
+			</LowCodeDragItem>
+			<LowCodeItemContainer
+				_low_code_parent_id="beea27fe-7dce-4f44-9dfc-7c799e3286cf"
+				_low_code_id="c02fe17c-00ac-4a75-ba88-f121f463a134"
+			/>
+		</div>
+	);
+};
+export default Index;

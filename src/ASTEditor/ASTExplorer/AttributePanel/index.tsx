@@ -41,8 +41,9 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 	const [form] = Form.useForm();
 	const {
 		currentItemChildId,
+		currentItemId,
 		getNodeById,
-		getPathById,
+		getPathKeyById,
 		getAttributeValues,
 		getAst,
 		updateAst,
@@ -50,7 +51,7 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 	} = useLowCodeInstance();
 	const curNode = useMemo(
 		() => (currentItemChildId ? getNodeById(currentItemChildId) : undefined),
-		[currentItemChildId]
+		[currentItemChildId, currentItemId]
 	);
 	const oldValueMap = useRef({});
 	const attribute = useMemo(() => {
@@ -75,7 +76,7 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 			form.setFields([ob]);
 		});
 		oldValueMap.current = map;
-	}, [attribute]);
+	}, [attribute, currentItemId, currentItemChildId]);
 
 	const getRender = it => {
 		if (it.valueEnum) {
@@ -94,7 +95,7 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 				if (Object.keys(ob).length) {
 					const find = attribute?.find(it => it?.withTextChildren);
 
-					const _path = getPathById(currentItemChildId);
+					const _path = getPathKeyById(currentItemChildId);
 					const newAst = updateAttributeValue(
 						curNode,
 						_path,
