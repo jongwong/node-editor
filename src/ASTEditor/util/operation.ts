@@ -29,11 +29,7 @@ export const updateAttributeValue = (
 			return;
 		}
 		if (findNode?.openingElement?.attributes) {
-			findNode.openingElement.attributes = updateAttribute(
-				findNode.openingElement?.attributes,
-				key,
-				getValueLiteral(valueIt)
-			);
+			updateAttribute(findNode.openingElement, key, getValueLiteral(valueIt));
 		}
 		// //
 		// findNode?.children?.forEach(childIt => {
