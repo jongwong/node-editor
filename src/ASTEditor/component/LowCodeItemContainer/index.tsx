@@ -22,7 +22,15 @@ import {
 	removeEditMark,
 	removeEditMarkAst,
 } from '@/ASTEditor/util';
-import { findNodeByUid, getJSXElementName, wrapperJSXElement } from '@/ASTEditor/util/ast-node';
+import {
+	findNodeByUid,
+	getIndexByParent,
+	getJSXElementName,
+	getUUidByNode,
+	logChildren,
+	wrapperJSXElement,
+} from '@/ASTEditor/util/ast-node';
+import { isHorizontalOrVertical } from '@/ASTEditor/util/dom';
 
 type LowCodeItemContainerProps = {
 	children?: React.ReactNode;
@@ -37,29 +45,49 @@ const LowCodeItemContainer: React.FC<LowCodeItemContainerProps> = props => {
 		astJson: astJsonData,
 		getNodeById,
 		getPathKeyById,
+		getTestNonePathMap,
+		currentItemId,
 		getPathById,
 		updateAst,
 	} = useLowCodeInstance();
-	const parentNode = getNodeById(_low_code_parent_id);
+	const curRef = useRef<HTMLDivElement | null>();
+	const parentNode = useMemo(
+		() => getNodeById(_low_code_parent_id),
+		[currentItemId, uuid, _low_code_parent_id]
+	);
 	const onItemDrop = item => {
 		const astJson = getAst();
-		const movePath = getPathById(item.uuid);
-
 		const moveNode = getNodeById(item.uuid);
+
 		const moveParentNode = getNodeById(item.parentId);
-		const targetPrentKey = getPathKeyById(_low_code_parent_id);
-		const targetNode = getNodeById(uuid);
 		const targetParentNode = getNodeById(_low_code_parent_id);
-		targetParentNode.children.splice(targetNode.key, 0, moveNode);
-		const curIndex = movePath?.key;
-		moveParentNode.children = moveParentNode.children.filter((it, idx) => idx !== curIndex);
 
-		moveParentNode.children = reInsertContainer(moveParentNode);
-		set(astJson, moveParentNode, moveParentNode);
+		const targetNode = getNodeById(uuid);
+		console.log('======moveParentNode====>', logChildren(moveParentNode));
+		console.log('======targetParentNode====>', logChildren(targetParentNode));
 
-		set(astJson, targetPrentKey, targetParentNode);
+		const curIndex = getIndexByParent(moveParentNode, moveNode);
 
-		updateAst?.(astJson);
+		const targetIndex = getIndexByParent(targetParentNode, targetNode);
+
+		if (curIndex < 0 || targetIndex < 0) {
+			return;
+		}
+		if (item.parentId === _low_code_parent_id) {
+			moveParentNode.children[curIndex] = targetNode;
+			moveParentNode.children[targetIndex] = moveNode;
+
+			const ob = getTestNonePathMap();
+
+			moveParentNode.children = reInsertContainer(moveParentNode);
+		} else {
+			moveParentNode.children.splice(curIndex, 1);
+			targetParentNode.children.splice(targetIndex, 0, moveNode);
+
+			moveParentNode.children = reInsertContainer(moveParentNode);
+			targetParentNode.children = reInsertContainer(targetParentNode);
+		}
+		updateAst?.(astJson, item.uuid);
 	};
 	const onMaterialItemDrop = item => {
 		const astJson = getAst();
@@ -138,12 +166,38 @@ const LowCodeItemContainer: React.FC<LowCodeItemContainerProps> = props => {
 		}),
 		[astJsonData, uuid]
 	);
+	const [direction, setDirection] = useState();
+	const getDirection = () => {
+		if (curRef.current) {
+			return isHorizontalOrVertical(curRef.current);
+		}
+		return 'vertical';
+	};
+	useEffect(() => {
+		if (!curRef.current) {
+			return;
+		}
+		const d = getDirection();
+		if (d !== direction) {
+			setDirection(d);
+		}
+	}, [curRef.current]);
+
 	return (
 		<div
-			className={classNames('low-code-container', isOverCurrent && 'low-code-container__dropping')}
-			ref={dropRef}
+			className={classNames(
+				'low-code-container',
+				direction && 'low-code-container-' + direction,
+				isOverCurrent && 'low-code-container__overing'
+			)}
+			ref={e => {
+				curRef.current = e;
+				dropRef(e);
+			}}
 		>
-			<span>{isOverCurrent ? `${getJSXElementName(parentNode)}` : null}</span>
+			<span className={'low-code-container-label'}>
+				{isOverCurrent ? `${getJSXElementName(parentNode)}` : null}
+			</span>
 		</div>
 	);
 };

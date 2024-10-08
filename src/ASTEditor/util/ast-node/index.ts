@@ -287,3 +287,21 @@ export const getJsxNameAndImport = (node, ast) => {
 export const getUUidByNode = node => {
 	return node?._low_code_id;
 };
+
+export const getIndexByParent = (targetParentNode: any, targetNode: any) => {
+	return targetParentNode.children.findIndex(it => getUUidByNode(it) === getUUidByNode(targetNode));
+};
+
+export const logChildren = node => {
+	return node.children.map(it => {
+		if (it.type === 'JSXElement') {
+			if (getJSXElementName(it) === 'LowCodeDragItem') {
+				return 'LowCodeDragItem' + '.' + logChildren(it);
+			}
+			return it.openingElement.name.name + '.' + logChildren(it);
+		}
+		if (it.type === 'JSXText') {
+			return it.value;
+		}
+	});
+};

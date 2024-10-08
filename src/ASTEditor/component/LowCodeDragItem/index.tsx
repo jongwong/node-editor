@@ -21,8 +21,14 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 	// eslint-disable-next-line react/prop-types
 	const { _low_code_child_id, _low_code_id, _low_code_parent_id, ...rest } = props;
 
-	const { getNodeById, onComponentDoubleClick, getPathKeyById, currentItemId } =
-		useLowCodeInstance();
+	const {
+		getNodeById,
+		getTestNonePathMap,
+		getAst,
+		onComponentDoubleClick,
+		getPathKeyById,
+		currentItemId,
+	} = useLowCodeInstance();
 
 	const curData = getNodeById(_low_code_id);
 	const childNode = getNodeById(_low_code_child_id);
@@ -96,8 +102,7 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 				removeClassName(elRef.current, EOperationClassName.LowCodeTargetItemHover);
 
 				e.stopPropagation();
-			}}
-		>
+			}}>
 			<span className={'low-code-target-item__menu'}>
 				<span>{name}</span>
 			</span>

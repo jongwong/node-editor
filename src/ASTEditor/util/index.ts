@@ -52,7 +52,7 @@ export const generateCode = (ast, code) => {
 export const getNodeUIDPathMap = ast => {
 	const ob = {};
 	traverse(ast, {
-		enter(path) {
+		exit(path) {
 			const id = getUUidByNode(path.node);
 			if (id) {
 				ob[id] = {

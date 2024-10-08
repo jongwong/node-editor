@@ -3,7 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import generate from '@babel/generator';
 import { NodePath } from '@babel/traverse';
 import { useDebounceFn } from 'ahooks';
-import { get, isNumber, isString } from 'lodash';
+import { cloneDeep, get, isNumber, isString } from 'lodash';
 
 import materialStore from '@/ASTEditor/ASTExplorer/material-store';
 import useProState from '@/ASTEditor/hooks/useProState';
@@ -70,11 +70,6 @@ export const useLowCodeInstance: () => InstanceReturnType = () => {
 		},
 		getTestNonePathMap: () => instance.getNonePathMap(),
 		getPathKeyById,
-		getPathById: (id: string) => {
-			const ob = instance.getNonePathMap();
-			const find = ob[id]?.path;
-			return find;
-		},
 		onComponentDoubleClick: instance.onComponentDoubleClick,
 		updateAst: instance.updateAst,
 	};
@@ -106,19 +101,22 @@ export default ({
 	};
 
 	const [hoverItemIdMap, setHoverItemMap] = useState({});
-	const changeAst = e => {
-		const formatCodeOutput1 = generateCode(e, transformCode);
-		const newAst = addAttrMarkByAst(e);
-		const formatCodeOutput = generateCode(newAst, transformCode);
+	const changeAst = (e, _iid) => {
+		idNonePathMap.current = {};
+		const newAst = addAttrMarkByAst(cloneDeep(e));
+		idNonePathMap.current = getNodeUIDPathMap(newAst);
+
+		const formatCodeOutput = generateCode(cloneDeep(newAst), transformCode);
+
 		const _code = prettierFormat(formatCodeOutput.code);
 
-		const noReMarkAst = removeEditMarkAst(e);
+		const noReMarkAst = removeEditMarkAst(cloneDeep(e));
 		const noReMarkOutput = generateCode(noReMarkAst, _code);
 		const noReMarkCode = prettierFormat(noReMarkOutput.code);
 
-		onCodeChange?.(noReMarkCode);
-		setAstJson(newAst);
+		_setAstJson(newAst);
 		setTransformCode(_code);
+		onCodeChange?.(noReMarkCode);
 	};
 	const reloadHover = () => {
 		if (!preElement) {

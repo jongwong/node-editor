@@ -208,7 +208,7 @@ const Index: React.FC = props => {
 		<div>
 			<LowCodeContextProvider value={providerValues}>
 				<DndProvider backend={HTML5Backend} context={window}>
-					<div style={{ display: 'grid', gridTemplateColumns: '35%  30% auto' }}>
+					<div style={{ display: 'grid', gridTemplateColumns: '0%  30% auto' }}>
 						<MonacoEditor
 							height="100vh"
 							width="100%"
