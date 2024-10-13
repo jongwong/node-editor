@@ -63,7 +63,8 @@ const ErrorBound = (props: any) => {
 				actionRef.current = e;
 			}}
 			onDidCatch={(err: any, info: any) => {
-				props?.onDidCatch(err, info);
+				console.error(err);
+				props?.onDidCatch?.(err, info);
 			}}
 		/>
 	);

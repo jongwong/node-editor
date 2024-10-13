@@ -5,7 +5,7 @@ import { Button, Form, Input, Radio, Select } from 'antd';
 import { forEach, forIn, set, values } from 'lodash';
 
 import { useLowCodeInstance } from '@/ASTEditor/ASTExplorer/useLowCodeContext';
-import { getJsxNameAndImport } from '@/ASTEditor/util/ast-node';
+import { getJsxNameAndImport, updateJSXTextNode } from '@/ASTEditor/util/ast-node';
 import { updateAttributeValue } from '@/ASTEditor/util/operation';
 
 const { Item } = Form;
@@ -53,6 +53,7 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 		() => (currentItemChildId ? getNodeById(currentItemChildId) : undefined),
 		[currentItemChildId, currentItemId]
 	);
+
 	const oldValueMap = useRef({});
 	const attribute = useMemo(() => {
 		if (!curNode) {
@@ -86,9 +87,27 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 		return valueTypeMap[it.valueType]?.renderFormItem?.();
 	};
 
+	if (curNode?.type === 'JSXText') {
+		return (
+			<Input.TextArea
+				key={currentItemChildId}
+				defaultValue={curNode?.value.trim()}
+				onChange={e => {
+					const _node = getNodeById(currentItemChildId);
+					const _path = getPathKeyById(currentItemChildId);
+					const _newNode = updateJSXTextNode(_node, e.target.value);
+					const ast = getAst();
+					set(ast, _path, _newNode);
+					updateAst?.(ast);
+				}}
+			/>
+		);
+	}
+
 	return (
 		<Form
 			form={form}
+			size={'small'}
 			style={{ paddingRight: '24px' }}
 			onValuesChange={(changedValues, values) => {
 				const ob = changedValues;
@@ -110,11 +129,13 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 				}
 			}}
 		>
-			{attribute?.map(it => (
-				<Item name={it.name} key={it.name} label={it.name}>
-					{getRender(it)}
-				</Item>
-			))}
+			{attribute
+				?.filter(it => it.name !== 'children')
+				.map(it => (
+					<Item name={it.name} key={it.name} label={it.name}>
+						{getRender(it)}
+					</Item>
+				))}
 		</Form>
 	);
 };

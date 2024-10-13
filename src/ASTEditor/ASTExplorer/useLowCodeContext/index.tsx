@@ -3,7 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import generate from '@babel/generator';
 import { NodePath } from '@babel/traverse';
 import { useDebounceFn } from 'ahooks';
-import { cloneDeep, get, isNumber, isString } from 'lodash';
+import { cloneDeep, get, isNumber, isString, omit } from 'lodash';
 
 import materialStore from '@/ASTEditor/ASTExplorer/material-store';
 import useProState from '@/ASTEditor/hooks/useProState';
@@ -41,6 +41,7 @@ type InstanceReturnType = {
 	onComponentDoubleClick: () => void;
 	getPathKeyById: (id: string) => string | undefined;
 	getPathById: (id: string) => NodePath | undefined;
+	ast: any;
 };
 export const useLowCodeInstance: () => InstanceReturnType = () => {
 	const { astJson, currentItemId, updateAst, transformCode, currentItemChildId, getDataInstance } =
@@ -101,7 +102,7 @@ export default ({
 	};
 
 	const [hoverItemIdMap, setHoverItemMap] = useState({});
-	const changeAst = (e, _iid) => {
+	const changeAst = e => {
 		idNonePathMap.current = {};
 		const newAst = addAttrMarkByAst(cloneDeep(e));
 		idNonePathMap.current = getNodeUIDPathMap(newAst);
@@ -113,7 +114,6 @@ export default ({
 		const noReMarkAst = removeEditMarkAst(cloneDeep(e));
 		const noReMarkOutput = generateCode(noReMarkAst, _code);
 		const noReMarkCode = prettierFormat(noReMarkOutput.code);
-
 		_setAstJson(newAst);
 		setTransformCode(_code);
 		onCodeChange?.(noReMarkCode);
@@ -161,14 +161,12 @@ export default ({
 					const name = getJSXElementName(curData);
 					const _config = materialStore.data?.find(it => it.name === name);
 
-					const hasText = _config?.attribute?.find(it => it?.withTextChildren);
-
-					const _children = children?.props?.children;
-					const findIndex = hasText ? _children?.findIndex(it => isString(it) || isNumber(it)) : -1;
-					const _attributeValue = {
-						...children.props,
-						children: findIndex >= 0 ? _children[findIndex] : undefined,
-					};
+					const _attributeValue = omit(
+						{
+							...children.props,
+						},
+						['children']
+					);
 
 					curAttributeValuesRef.current = _attributeValue;
 

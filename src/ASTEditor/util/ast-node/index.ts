@@ -12,13 +12,28 @@ import {
 	numericLiteral,
 	stringLiteral,
 } from '@babel/types';
-import { isArray, isBoolean, isNumber, isObject, isString } from 'lodash';
+import { cloneDeep, isArray, isBoolean, isNumber, isObject, isString, set } from 'lodash';
 import { v4 as uuid } from 'uuid';
+
+import {
+	generateCode,
+	isLowCodeElement,
+	prettierFormat,
+	removeEditMarkAst,
+} from '@/ASTEditor/util';
 
 type NodeType = any;
 export const getJSXElementName = (node: NodeType) => {
 	return node?.openingElement?.name?.name;
 };
+
+export const renderNodeName = (node: NodeType) => {
+	if (node?.type === 'JSXText') {
+		return 'Text';
+	}
+	return node?.openingElement?.name?.name;
+};
+
 export const getJSXElementAttributesValue = (node: NodeType, name: string) => {
 	return node?.openingElement?.attributes?.find(it => it?.name?.name === name)?.value?.value;
 };
@@ -71,6 +86,7 @@ export const wrapperJSXElement = (
 };
 export const updateAttribute = (node, name: string, value) => {
 	const attributes = node?.attributes || [];
+
 	const idx = attributes.findIndex(nodeAttrIt => nodeAttrIt?.name?.name === name);
 
 	const _ast = jsxAttribute(
@@ -196,7 +212,7 @@ export const setAttribute = (node, attributeName, attributeValue) => {
 	return newNode; // 返回新的节点
 };
 export const getAttributeValue = (node, attributeName) => {
-	if (node.attributes) {
+	if (node?.attributes) {
 		const attribute = node.attributes.find(attr => attr.name.name === attributeName);
 		if (attribute && attribute.value && attribute.value.type === 'StringLiteral') {
 			return attribute.value.value; // 返回属性值
@@ -289,19 +305,61 @@ export const getUUidByNode = node => {
 };
 
 export const getIndexByParent = (targetParentNode: any, targetNode: any) => {
-	return targetParentNode.children.findIndex(it => getUUidByNode(it) === getUUidByNode(targetNode));
+	return targetParentNode?.children?.findIndex(
+		it => getUUidByNode(it) === getUUidByNode(targetNode)
+	);
 };
 
-export const logChildren = node => {
-	return node.children.map(it => {
-		if (it.type === 'JSXElement') {
-			if (getJSXElementName(it) === 'LowCodeDragItem') {
-				return 'LowCodeDragItem' + '.' + logChildren(it);
+export const logChildren = (node: any, removeRemark?: boolean) => {
+	const _newNode = cloneDeep(node);
+	traverse(removeRemark ? ensureProgramAst(removeEditMarkAst(_newNode)) : ensureProgramAst(node), {
+		exit: path => {
+			if (isLowCodeElement(path.node)) {
+				path.node.openingElement.attributes = [];
+				set(_newNode, path.getPathLocation(), path.node);
 			}
-			return it.openingElement.name.name + '.' + logChildren(it);
-		}
-		if (it.type === 'JSXText') {
-			return it.value;
-		}
+		},
 	});
+
+	const re = generateCode(_newNode, '');
+	return prettierFormat(re.code);
+};
+
+export const logAstJsxIndex = (ast: any, name: string, index = 0, removeRemark?: boolean) => {
+	const cloneAst = cloneDeep(ast);
+	let idx = 0;
+	let re = '';
+	traverse(removeRemark ? removeEditMarkAst(cloneAst) : ensureProgramAst(cloneAst), {
+		exit: path => {
+			if (getJSXElementName(path.node) === name) {
+				if (idx === index) {
+					re = logChildren(path.node);
+					path.stop();
+				}
+				idx = idx + 1;
+			}
+		},
+	});
+	return re;
+};
+
+export const ensureProgramAst = (ast: any) => {
+	if (ast.type === 'Program') {
+		return ast; // 如果已经是 Program，直接返回
+	}
+
+	// 否则，我们将其包裹在 Program 中
+	return {
+		type: 'Program',
+		body: [ast], // 把原来的 AST 放在 body 数组中
+		sourceType: 'module', // 可以根据需要设置为 'module' 或 'script'
+	};
+};
+// 更新并返回新的 JSXText 节点
+export const updateJSXTextNode = (jsxTextNode: any, newText: string): any => {
+	// 返回一个新的节点，更新了 jsxText
+	return {
+		...jsxTextNode, // 保持原节点的其他属性
+		value: newText, // 更新新的文本
+	};
 };

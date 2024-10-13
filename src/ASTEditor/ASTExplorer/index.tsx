@@ -5,7 +5,7 @@ import { JSONTree } from 'react-json-tree';
 import MonacoEditor from 'react-monaco-editor';
 
 import { useDebounce, useDebounceFn } from 'ahooks';
-import { Button, Input, Tabs } from 'antd';
+import { Button, FloatButton, Input, Tabs } from 'antd';
 import classNames from 'classnames';
 import {
 	cloneDeep,
@@ -25,12 +25,20 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import AttributePanel from '@/ASTEditor/ASTExplorer/AttributePanel';
 import { astViewTheme, initOtherConfig } from '@/ASTEditor/ASTExplorer/init';
 import MaterialPanel from '@/ASTEditor/ASTExplorer/MaterialPanel';
+import TreePanel from '@/ASTEditor/ASTExplorer/TreePanel';
 import useLowCodeContext, {
 	LowCodeContextProvider,
 } from '@/ASTEditor/ASTExplorer/useLowCodeContext';
 import CodePreview from '@/ASTEditor/CodePreview';
 import rawCode from '@/ASTEditor/raw-code';
-import { addEditMark, generateCode, prettierFormat, removeEditMark } from '@/ASTEditor/util';
+import {
+	addEditMark,
+	formattedJson,
+	generateCode,
+	prettierFormat,
+	removeEditMark,
+	removeEditMarkAst,
+} from '@/ASTEditor/util';
 
 import './index.less';
 
@@ -53,6 +61,7 @@ const Index: React.FC = props => {
 	const previewElRef = useRef<HTMLDivElement>();
 	const astJsonRef = useRef({});
 	const getAstJson = () => astJsonRef.current;
+	const [showDebugPanel, setShowDebugPanel] = useState(false);
 
 	const initCodeRef = useRef(false);
 	const editorRef = useRef<monacoEditor.editor.IStandaloneCodeEditor>();
@@ -204,45 +213,79 @@ const Index: React.FC = props => {
 		transform(code);
 	}, []);
 	const isFocusedRef = useRef(false);
+
+	const renderVerticalText = (text: string) => {
+		return (
+			<span
+				style={{
+					writingMode: 'vertical-rl', // 使文字垂直排列
+					// transform: 'rotate(180deg)', // 修正文字垂直排列的方向
+					whiteSpace: 'nowrap', // 防止文字换行
+				}}
+			>
+				{text}
+			</span>
+		);
+	};
 	return (
 		<div>
 			<LowCodeContextProvider value={providerValues}>
 				<DndProvider backend={HTML5Backend} context={window}>
-					<div style={{ display: 'grid', gridTemplateColumns: '0%  30% auto' }}>
-						<MonacoEditor
-							height="100vh"
-							width="100%"
-							language="typescript"
-							options={options}
-							editorDidMount={(_edit, m) => {
-								editorRef.current = _edit;
-								monacoRef.current = m;
-								initOtherConfig(m);
-								const _modal = setModelCode();
-								_edit.setModel(_modal);
+					<div style={{ display: 'grid', gridTemplateColumns: '30%  30% auto' }}>
+						<div>
+							<Tabs
+								size={'small'}
+								type="card"
+								tabPosition={'left'}
+								onChange={e => {
+									if (e === 'code') {
+										setTimeout(() => {
+											setModelCode(code);
+										}, 300);
+									}
+								}}
+							>
+								<Tabs.TabPane key={'tree'} tab={renderVerticalText('Project')}>
+									<TreePanel />
+								</Tabs.TabPane>
+								<Tabs.TabPane key={'code'} tab={renderVerticalText('Code')}>
+									<MonacoEditor
+										height="100vh"
+										width="100%"
+										language="typescript"
+										options={options}
+										editorDidMount={(_edit, m) => {
+											editorRef.current = _edit;
+											monacoRef.current = m;
+											initOtherConfig(m);
+											const _modal = setModelCode();
+											_edit.setModel(_modal);
 
-								_edit.onDidChangeCursorSelection(e => {
-									onCursorSelection(e?.selection);
-								});
-								_edit.onDidFocusEditorText(e => {
-									isFocusedRef.current = true;
-								});
-								_edit.onDidBlurEditorText(e => {
-									isFocusedRef.current = false;
-								});
-							}}
-							onChange={e => {
-								if (!isFocusedRef.current) {
-									return;
-								}
-								setCode(e);
+											_edit.onDidChangeCursorSelection(e => {
+												onCursorSelection(e?.selection);
+											});
+											_edit.onDidFocusEditorText(e => {
+												isFocusedRef.current = true;
+											});
+											_edit.onDidBlurEditorText(e => {
+												isFocusedRef.current = false;
+											});
+										}}
+										onChange={e => {
+											if (!isFocusedRef.current) {
+												return;
+											}
+											setCode(e);
 
-								transform(e || '');
-							}}
-						/>
+											transform(e || '');
+										}}
+									/>
+								</Tabs.TabPane>
+							</Tabs>
+						</div>
 
 						<div
-							className="right-panel"
+							className="right-panel other-panel"
 							onMouseLeave={() => {
 								clearMark();
 							}}
@@ -250,6 +293,7 @@ const Index: React.FC = props => {
 							<Tabs
 								type="card"
 								destroyInactiveTabPane
+								size={'small'}
 								onChange={e => {
 									clearMark();
 									if (e !== 'ast') {
@@ -263,6 +307,57 @@ const Index: React.FC = props => {
 									<div style={{ height: '100vh', overflow: 'scroll' }}>
 										<AttributePanel code={transformCode} />
 									</div>
+								</Tabs.TabPane>
+
+								<Tabs.TabPane key="material" tab="物料库">
+									<MaterialPanel />
+								</Tabs.TabPane>
+							</Tabs>
+						</div>
+
+						<div className={'other-panel'} ref={previewElRef as any} style={{ marginTop: '50px' }}>
+							<CodePreview
+								onPreviewReRender={() => {
+									reload();
+								}}
+								files={[{ filename: 'index.tsx', code: transformCode }]}
+								demoId="modalPath"
+							/>
+						</div>
+					</div>
+
+					{showDebugPanel ? (
+						<div
+							style={{
+								position: 'absolute',
+								left: 0,
+								right: 0,
+								top: 0,
+								bottom: 0,
+								zIndex: 10,
+								background: 'white',
+							}}
+						>
+							<Tabs
+								type="card"
+								destroyInactiveTabPane
+								size={'small'}
+								onChange={e => {
+									clearMark();
+									if (e !== 'ast') {
+										setTimeout(() => {
+											setTransformModelCode(code);
+										}, 100);
+									}
+								}}
+							>
+								<Tabs.TabPane key="ast-json" tab="ast-json">
+									<MonacoEditor
+										language={'json'}
+										height={'100vh'}
+										options={options}
+										value={formattedJson(JSON.stringify(astJson) || '{}')}
+									/>
 								</Tabs.TabPane>
 								<Tabs.TabPane key="ast" tab="ast">
 									<div style={{ height: '95vh', overflow: 'auto' }}>
@@ -317,23 +412,21 @@ const Index: React.FC = props => {
 										<Input.TextArea value={transformCode} autoSize />
 									</div>
 								</Tabs.TabPane>
-
-								<Tabs.TabPane key="material" tab="物料库">
-									<MaterialPanel />
+								<Tabs.TabPane key="rawCode" tab="raw代码">
+									<div style={{ height: '100vh', overflow: 'scroll' }}>
+										<Input.TextArea
+											value={generateCode(removeEditMarkAst(astJson)).code}
+											autoSize
+										/>
+									</div>
 								</Tabs.TabPane>
 							</Tabs>
 						</div>
-
-						<div ref={previewElRef as any} style={{ marginTop: '50px' }}>
-							<CodePreview
-								onPreviewReRender={() => {
-									reload();
-								}}
-								files={[{ filename: 'index.tsx', code: transformCode }]}
-								demoId="modalPath"
-							/>
-						</div>
-					</div>
+					) : null}
+					<FloatButton
+						icon={<span>B</span>}
+						onClick={() => setShowDebugPanel(!showDebugPanel)}
+					></FloatButton>
 				</DndProvider>
 			</LowCodeContextProvider>
 		</div>

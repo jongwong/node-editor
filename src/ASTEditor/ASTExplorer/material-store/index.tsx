@@ -677,6 +677,10 @@ const materialStore = {
 					valueType: 'input',
 					remark: '自定义类名',
 				},
+				{
+					name: 'children',
+					valueType: 'input',
+				},
 			],
 		},
 		...TabsConfig.data,
@@ -684,3 +688,4 @@ const materialStore = {
 	],
 };
 export default materialStore;
+window.materialStore = materialStore;

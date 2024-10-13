@@ -4,6 +4,10 @@
 .json-tree-find-active {
 	background-color: rgba(181, 213, 251, 0.71);
 }
+.other-panel {
+	//overflow-x: hidden;
+	//display: none !important;
+}
 .right-panel {
 	display: grid;
 	grid-template-rows: 50% auto;
@@ -20,8 +24,10 @@
 	}
 }
 .low-code-target-item__hover {
+	z-index: 100000;
+	outline: 1px #078cfa dashed !important;
 	& > * {
-		border: 1px #078cfa dashed;
+		outline: 1px #078cfa dashed !important;
 	}
 }
 .low-code-target-item__dropping {
@@ -37,37 +43,36 @@
 
 .low-code-container {
 	box-sizing: border-box;
-	border: 2px solid rgba(255, 0, 0, 0);
-	margin: 2px;
-	background: rgba(246, 221, 204, 0.85);
 	display: none;
 	position: relative;
 }
 
-.low-code-container__dragging {
-	.low-code-container-vertical {
-		display: block;
-		width: 100%;
-		height: 2px;
-	}
-	.low-code-container-horizontal {
-		display: inline;
-		width: 2px;
-		height: 100%;
-	}
-	.low-code-container__overing.low-code-container-vertical {
-		background: rgba(236, 91, 86, 0.84);
-	}
-	.low-code-container__overing.low-code-container-horizontal {
-		background: rgba(236, 91, 86, 0.84);
-	}
-	.low-code-container-label {
-		position: absolute;
-		left: 0;
-		top: -20px;
-		background: rgba(126, 65, 72, 0.7);
-		color: #ffffff;
-	}
+.low-code-container-vertical {
+	width: 100%;
+	height: 0;
+	display: block;
+}
+.low-code-container-horizontal {
+	display: inline;
+}
+.low-code-container-label {
+	display: none;
+}
+.low-code-container-closest {
+	border: 1px #d5946b dashed;
+	background: rgba(245, 171, 169, 0.71);
+}
+
+.low-code-container-hover {
+	padding: 4px;
+	border: 1px rgba(246, 109, 58, 0.71) dashed;
+}
+
+.low-code-container-closest.low-code-container-vertical {
+	padding: 8px;
+}
+.low-code-container-closest.low-code-container-horizontal {
+	padding: 8px;
 }
 
 .low-code-target-item__dragging {
@@ -93,5 +98,13 @@
 
 .low-code-target-item__hover > .low-code-target-item__menu {
 	display: inline-flex;
+	width: max-content;
+	min-width: 50px;
+	z-index: 100000;
 	justify-content: space-between;
+}
+.drop-slot {
+	background: red;
+	height: 2px;
+	overflow-y: hidden;
 }

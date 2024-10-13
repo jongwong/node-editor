@@ -1,45 +1,70 @@
-import { createContext } from 'react';
-
 import generate from '@babel/generator';
 import { parse } from '@babel/parser';
 import traverse from '@babel/traverse';
 import { isJSX, jsxAttribute, jsxIdentifier, stringLiteral } from '@babel/types';
-import { first, forIn, isArray, isNumber, isObject, keys, last, set } from 'lodash';
-import prettier, { BuiltInParsers, Options } from 'prettier';
+import {
+	cloneDeep,
+	first,
+	forEach,
+	forIn,
+	isArray,
+	isNumber,
+	isObject,
+	keys,
+	last,
+	omit,
+	set,
+} from 'lodash';
+import prettier from 'prettier/standalone';
 import { v4 as uuid } from 'uuid';
 
 import materialStore from '@/ASTEditor/ASTExplorer/material-store';
 import {
 	createNewContainer,
+	ensureProgramAst,
 	findAdjacentJSXElements,
 	findNodeByUid,
 	getAttributeValue,
 	getJSXElementName,
 	getUUidByNode,
 	getValueLiteral,
+	logChildren,
 	setAttribute,
 	updateAttribute,
 	updateJexTextNode,
 	wrapperJSXElement,
 } from '@/ASTEditor/util/ast-node';
 
-const isDebug = true;
-
+const isDebug = false;
+const addIdDebug = false;
 export const prettierFormat = (code: string) => {
 	return prettier.format(code, {
-		parser: (text: string, parsers: BuiltInParsers, options: Options) => {
+		parser: (text: string, parsers, options) => {
 			return toAst(text);
 		},
 	});
 };
+export const formattedJson = code => {
+	let jsonObject;
 
+	try {
+		// 尝试解析 JSON 字符串
+		jsonObject = JSON.parse(code);
+	} catch (error) {
+		throw new Error('Invalid JSON string');
+	}
+
+	// 手动使用 JSON.stringify 格式化
+	const formattedJson = JSON.stringify(jsonObject, null, 4);
+	return formattedJson;
+};
 export const toAst = (code: string) => {
 	const ast = parse(code, { sourceType: 'module', plugins: ['typescript', 'jsx'] });
 
 	return ast;
 };
 
-export const generateCode = (ast, code) => {
+export const generateCode = (ast, code = '') => {
 	return (
 		generate(
 			ast,
@@ -66,63 +91,140 @@ export const getNodeUIDPathMap = ast => {
 	return ob;
 };
 
+export const resetFlatChildrenItemRemark = node => {
+	node.children = reInsertContainer(node);
+	const _newAst = ensureProgramAst(node);
+
+	traverse(_newAst, {
+		enter: path => {
+			const str = path?.parentPath?.getPathLocation();
+			if (
+				(str === 'body[0]' || /^body\[\d+\]\.children\[(\d+)\]$/.test(str)) &&
+				['JSXElement', 'JSXText'].includes(path.node.type)
+			) {
+				addItemRemark(path, true);
+			}
+		},
+		exit: path => {
+			const attributeConfig = {
+				_low_code_child_id: '',
+				_low_code_parent_id: getUUidByNode(path.parent),
+			};
+			if (attributeConfig?._low_code_parent_id && isLowCodeElement(path.node)) {
+				resetAttributesId(path, attributeConfig);
+			}
+		},
+	});
+	return _newAst.body?.[0];
+};
+
+const resetAttributesId = (path, attributeConfig) => {
+	forEach(attributeConfig, (value, key) => {
+		let _val = value;
+		if (getJSXElementName(path.node) === 'LowCodeDragItem' && key === '_low_code_child_id') {
+			const find = path.node.children.find(it => isItemElement(it));
+			const cid = getUUidByNode(find) || '';
+
+			_val = cid;
+		}
+
+		if (path.node.openingElement && getAttributeValue(path.node.openingElement, key) === _val) {
+			return;
+		}
+
+		path.node.openingElement = updateAttribute(path.node.openingElement, key, stringLiteral(_val));
+	});
+	if (isDebug && path?.node.type === 'JSXElement') {
+		path.node._childrenText = logChildren(path.node, true);
+
+		addIdDebug &&
+			updateAttribute(
+				path.node.openingElement,
+				'_low_code_id',
+				stringLiteral(path.node._low_code_id)
+			);
+	}
+};
+
+const isItemElement = node => {
+	return isFullTextText(node) || isJSX(node, { type: 'JSXElement' });
+};
+
+const addItemRemark = (path: any, reset?: boolean) => {
+	const isValidText = isFullTextText(path.node);
+	if (!isItemElement(path.node)) {
+		return;
+	}
+
+	const name = getJSXElementName(path.node);
+
+	if (!path.node._low_code_id) {
+		path.node._low_code_id = uuid();
+	}
+	if (!path.parent._low_code_id) {
+		path.parent._low_code_id = uuid();
+	}
+	const cUid = path.node._low_code_id;
+	const pUid = path.parent._low_code_id;
+
+	const isMaterialJsx =
+		isValidText ||
+		materialStore.data.some(configIt => {
+			return name === configIt.name;
+		});
+
+	const attributeConfig = {
+		_low_code_child_id: cUid,
+		_low_code_parent_id: pUid,
+		_low_code_type: isValidText ? 'JSXText' : 'JSXElement',
+	};
+
+	if (
+		getJSXElementName(path.node) === 'LowCodeDragItem' ||
+		getJSXElementName(path.node) === 'LowCodeItemContainer'
+	) {
+		resetAttributesId(path, omit(attributeConfig));
+		return;
+	}
+
+	if (!isMaterialJsx) {
+		return;
+	}
+
+	if (getJSXElementName(path.parent) !== 'LowCodeDragItem') {
+		const _uid = uuid();
+		if (isDebug && path?.node?.type === 'JSXElement') {
+			addIdDebug && updateAttribute(path.node.openingElement, '_low_code_id', stringLiteral(_uid));
+		}
+		const _node = path.node;
+
+		const lowCodeDragItem = wrapperJSXElement(
+			'LowCodeDragItem',
+			[_node],
+			[jsxAttribute(jsxIdentifier('_low_code_id'), stringLiteral(_uid))]
+		);
+		if (isDebug) {
+			lowCodeDragItem._childrenText = logChildren(lowCodeDragItem, true);
+		}
+
+		forEach(attributeConfig, (value, key) => {
+			lowCodeDragItem.openingElement = updateAttribute(
+				lowCodeDragItem.openingElement,
+				key,
+				stringLiteral(value)
+			);
+		});
+
+		lowCodeDragItem._low_code_id = _uid;
+
+		path.replaceWith(lowCodeDragItem);
+	}
+};
+
 export const addAttrMarkByAst = ast => {
 	traverse(ast, {
 		enter(path) {
-			if (!isJSX(path.node, { type: 'JSXElement' })) {
-				return;
-			}
-
-			const name = getJSXElementName(path.node);
-
-			if (!path.node._low_code_id) {
-				path.node._low_code_id = uuid();
-			}
-			if (!path.parent._low_code_id) {
-				path.parent._low_code_id = uuid();
-			}
-			const cUid = path.node._low_code_id;
-			const pUid = path.parent._low_code_id;
-			const isMaterialJsx = materialStore.data.some(configIt => {
-				return name === configIt.name;
-			});
-
-			if (!isMaterialJsx) {
-				return;
-			}
-			if (
-				getJSXElementName(path.node) === 'LowCodeDragItem' ||
-				getJSXElementName(path.node) === 'LowCodeItemContainer'
-			) {
-				// const isError =
-				// 	getUUidByNode(path.node?.children[0]) !==
-				// 	getAttributeValue(path.node, '_low_code_child_id');
-				// if (isError) {
-				// 	path.remove();
-				// }
-				return;
-			}
-
-			if (getJSXElementName(path.parent) !== 'LowCodeDragItem') {
-				const _uid = uuid();
-
-				const _node = isDebug
-					? updateAttribute(path?.node, '_low_code_id', stringLiteral(_uid))
-					: path.node;
-
-				const lowCodeDragItem = wrapperJSXElement(
-					'LowCodeDragItem',
-					[_node],
-					[
-						jsxAttribute(jsxIdentifier('_low_code_id'), stringLiteral(_uid)),
-						jsxAttribute(jsxIdentifier('_low_code_child_id'), stringLiteral(cUid)),
-						jsxAttribute(jsxIdentifier('_low_code_parent_id'), stringLiteral(pUid)),
-					]
-				);
-				lowCodeDragItem._low_code_id = _uid;
-
-				path.replaceWith(lowCodeDragItem);
-			}
+			addItemRemark(path);
 		},
 		exit(path) {
 			if (path.node.type === 'JSXElement' && !isLowCodeElement(path.node)) {
@@ -143,17 +245,10 @@ export const addEditMark = (code: string) => {
 };
 
 export const removeEditMarkAst = (ast: any) => {
-	traverse(ast, {
-		enter(path) {
+	traverse(ensureProgramAst(cloneDeep(ast)), {
+		exit(path) {
 			if (isLowCodeElement(path.node)) {
-				const find = path.node.children?.find(it => {
-					return materialStore?.data?.some(configIt => {
-						if (isJSX(it, { type: 'JSXElement' })) {
-							const name = getJSXElementName(it);
-							return name === configIt.name;
-						}
-					});
-				});
+				const find = path.node.children?.[0];
 
 				if (find) {
 					path.replaceWith(find);
@@ -175,7 +270,7 @@ export const removeEditMark = (code: string | Record<string, any>) => {
 const appendIndexPath = (parentPathString: string, idx: number) => {
 	return parentPathString + '[' + idx + '}';
 };
-const isLowCodeElement = node => {
+export const isLowCodeElement = node => {
 	return ['LowCodeDragItem', 'LowCodeItemContainer'].includes(getJSXElementName(node));
 };
 const isLowCodeContainer = node => {
@@ -189,8 +284,15 @@ const isFullTextText = _node => {
 };
 
 export const reInsertContainer = node => {
-	const _rawChildren = node?.children || [];
+	const name = getJSXElementName(node);
+	const find = (window.materialStore?.data || []).find(it => it.name === name);
 
+	const _rawChildren = node?.children || [];
+	const hasChild = find && !find?.attribute.some(it => it.name === 'children');
+
+	if (!hasChild && _rawChildren?.length === 0) {
+		return _rawChildren;
+	}
 	const repeatIndexList: number[] = _rawChildren
 		.map((it, idx) => {
 			if (isLowCodeContainer(it) && isLowCodeContainer(_rawChildren[idx + 1])) {
@@ -224,6 +326,7 @@ export const reInsertContainer = node => {
 	let containerIndex = -1;
 	// JsxIndexMap的长度 + container的长度(比JsxIndexMap多一个) + 其他的
 	const len = keys(JsxIndexMap).length * 2 + 1 + keys(otherIndexMap).length;
+
 	for (let i = 0; i < len; i++) {
 		if (isContainer) {
 			const _node = containerIndexMap[i] || createNewContainer(getUUidByNode(node), uuid());
@@ -256,5 +359,6 @@ export const reInsertContainer = node => {
 			}
 		}
 	}
+
 	return newChildren;
 };
