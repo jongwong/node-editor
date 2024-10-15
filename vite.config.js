@@ -6,6 +6,7 @@ import monacoEditorPlugin from 'vite-plugin-monaco-editor';
 const babel = require('@rollup/plugin-babel');
 import Buffer from 'buffer';
 import * as fs from 'fs';
+const { DefinePlugin } = require('@rspack/core');
 
 function rawTxtPlugin() {
 	return {
@@ -31,6 +32,9 @@ export default defineConfig({
 	},
 
 	plugins: [
+		new ProvidePlugin({
+			process: [require.resolve('process/browser')],
+		}),
 		react(), // 代替 ReactRefreshWebpackPlugin
 		monacoEditorPlugin({
 			// 代替 MonacoWebpackPlugin
