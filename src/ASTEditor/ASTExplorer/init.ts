@@ -2,6 +2,10 @@ import * as monacoEditor from 'monaco-editor';
 import * as monaco from 'monaco-editor';
 
 export const initOtherConfig = (m: typeof monacoEditor) => {
+	if (!m.languages.typescript) {
+		return;
+	}
+
 	m.languages.typescript.typescriptDefaults.setEagerModelSync(true);
 	m.languages.typescript.javascriptDefaults.setEagerModelSync(true);
 	// 打开语法检查功能

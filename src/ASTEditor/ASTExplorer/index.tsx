@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { DndProvider, useDragLayer } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { JSONTree } from 'react-json-tree';
-import MonacoEditor from 'react-monaco-editor';
 
 import { useDebounce, useDebounceFn } from 'ahooks';
 import { Button, FloatButton, Input, Tabs } from 'antd';
@@ -39,7 +38,7 @@ import {
 	removeEditMark,
 	removeEditMarkAst,
 } from '@/ASTEditor/util';
-
+import Editor from '@monaco-editor/react';
 import './index.less';
 
 import {
@@ -71,6 +70,7 @@ const Index: React.FC = props => {
 	const { astJson, providerValues, reload, transformCode, transform } = useLowCodeContext({
 		onCodeChange: e => {
 			setModelCode(e);
+			setCode(e);
 		},
 		preElement: previewElRef.current,
 	});
@@ -146,7 +146,7 @@ const Index: React.FC = props => {
 			initCodeRef.current = true;
 			const m = modalRef.current;
 			if (!m || code !== m?.getValue()) {
-				setModelCode(code);
+				m?.setValue(code);
 			}
 		}
 	}, [code]);
@@ -212,7 +212,6 @@ const Index: React.FC = props => {
 	useEffect(() => {
 		transform(code);
 	}, []);
-	const isFocusedRef = useRef(false);
 
 	const renderVerticalText = (text: string) => {
 		return (
@@ -221,8 +220,7 @@ const Index: React.FC = props => {
 					writingMode: 'vertical-rl', // 使文字垂直排列
 					// transform: 'rotate(180deg)', // 修正文字垂直排列的方向
 					whiteSpace: 'nowrap', // 防止文字换行
-				}}
-			>
+				}}>
 				{text}
 			</span>
 		);
@@ -243,38 +241,25 @@ const Index: React.FC = props => {
 											setModelCode(code);
 										}, 300);
 									}
-								}}
-							>
+								}}>
 								<Tabs.TabPane key={'tree'} tab={renderVerticalText('Project')}>
 									<TreePanel />
 								</Tabs.TabPane>
 								<Tabs.TabPane key={'code'} tab={renderVerticalText('Code')}>
-									<MonacoEditor
+									<Editor
 										height="100vh"
 										width="100%"
 										language="typescript"
 										options={options}
-										editorDidMount={(_edit, m) => {
+										defaultPath={`${modalPath}/Transform.tsx`}
+										defaultLanguage={'typescript'}
+										defaultValue={code}
+										onMount={(_edit, m) => {
 											editorRef.current = _edit;
 											monacoRef.current = m;
 											initOtherConfig(m);
-											const _modal = setModelCode();
-											_edit.setModel(_modal);
-
-											_edit.onDidChangeCursorSelection(e => {
-												onCursorSelection(e?.selection);
-											});
-											_edit.onDidFocusEditorText(e => {
-												isFocusedRef.current = true;
-											});
-											_edit.onDidBlurEditorText(e => {
-												isFocusedRef.current = false;
-											});
 										}}
 										onChange={e => {
-											if (!isFocusedRef.current) {
-												return;
-											}
 											setCode(e);
 
 											transform(e || '');
@@ -288,8 +273,7 @@ const Index: React.FC = props => {
 							className="right-panel other-panel"
 							onMouseLeave={() => {
 								clearMark();
-							}}
-						>
+							}}>
 							<Tabs
 								type="card"
 								destroyInactiveTabPane
@@ -301,8 +285,7 @@ const Index: React.FC = props => {
 											setTransformModelCode(code);
 										}, 100);
 									}
-								}}
-							>
+								}}>
 								<Tabs.TabPane key="attribute" tab="属性">
 									<div style={{ height: '100vh', overflow: 'scroll' }}>
 										<AttributePanel code={transformCode} />
@@ -336,8 +319,7 @@ const Index: React.FC = props => {
 								bottom: 0,
 								zIndex: 10,
 								background: 'white',
-							}}
-						>
+							}}>
 							<Tabs
 								type="card"
 								destroyInactiveTabPane
@@ -349,10 +331,9 @@ const Index: React.FC = props => {
 											setTransformModelCode(code);
 										}, 100);
 									}
-								}}
-							>
+								}}>
 								<Tabs.TabPane key="ast-json" tab="ast-json">
-									<MonacoEditor
+									<Editor
 										language={'json'}
 										height={'100vh'}
 										options={options}
@@ -397,8 +378,7 @@ const Index: React.FC = props => {
 														}}
 														onMouseEnter={() => {
 															showKeyMark(cloneDeep(keyPath) as any);
-														}}
-													>
+														}}>
 														{label}
 													</div>
 												);
@@ -425,8 +405,7 @@ const Index: React.FC = props => {
 					) : null}
 					<FloatButton
 						icon={<span>B</span>}
-						onClick={() => setShowDebugPanel(!showDebugPanel)}
-					></FloatButton>
+						onClick={() => setShowDebugPanel(!showDebugPanel)}></FloatButton>
 				</DndProvider>
 			</LowCodeContextProvider>
 		</div>

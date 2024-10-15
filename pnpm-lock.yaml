@@ -14,6 +14,7 @@ specifiers:
   '@commitlint/cli': ^17.6.3
   '@commitlint/config-conventional': ^17.6.3
   '@jongwong/react-live-editor': 1.0.0-beta.0
+  '@monaco-editor/react': ^4.6.0
   '@rollup/plugin-babel': ^6.0.4
   '@rspack/cli': ^1.0.10
   '@rspack/core': ^1.0.10
@@ -96,7 +97,6 @@ specifiers:
   react-dnd-html5-backend: ^16.0.1
   react-dom: ^18.2.0
   react-json-tree: ^0.18.0
-  react-monaco-editor: ^0.56.2
   react-refresh: ^0.14.0
   react-router: ^5.3.4
   react-router-config: ^5.1.1
@@ -133,6 +133,7 @@ dependencies:
   '@babel/traverse': 7.22.15
   '@babel/types': 7.22.15
   '@jongwong/react-live-editor': 1.0.0-beta.0_m4zm6y3s3zjr2t54qg4bqhivn4
+  '@monaco-editor/react': 4.6.0_w7tdayx7mjxhqmux4sjxtmh4du
   ahooks: 3.7.8_react@18.2.0
   antd: 5.8.6_biqbaboplfbrettd7655fr4n2y
   axios: 1.5.0
@@ -148,7 +149,6 @@ dependencies:
   react-dnd-html5-backend: 16.0.1
   react-dom: 18.2.0_react@18.2.0
   react-json-tree: 0.18.0_gq4reeurwxuj4hvyerswzzqthy
-  react-monaco-editor: 0.56.2_z7xue7bqoyl5qolixcdtatmdwm
   react-router: 5.3.4_react@18.2.0
   react-router-config: 5.1.1_rlw3ibuvnpt5jvejeevjcf4ije
   uuid: 3.4.0
@@ -2941,6 +2941,28 @@ packages:
       '@module-federation/runtime': 0.5.1
       '@module-federation/sdk': 0.5.1
     dev: true
+
+  /@monaco-editor/loader/1.4.0_monaco-editor@0.52.0:
+    resolution: {integrity: sha512-00ioBig0x642hytVspPl7DbQyaSWRaolYie/UFNjoTdvoKPzo6xrXLhTk9ixgIKcLH5b5vDOjVNiGyY+uDCUlg==}
+    peerDependencies:
+      monaco-editor: '>= 0.21.0 < 1'
+    dependencies:
+      monaco-editor: 0.52.0
+      state-local: 1.0.7
+    dev: false
+
+  /@monaco-editor/react/4.6.0_w7tdayx7mjxhqmux4sjxtmh4du:
+    resolution: {integrity: sha512-RFkU9/i7cN2bsq/iTkurMWOEErmYcY6JiQI3Jn+WeR/FGISH8JbHERjpS9oRuSOPvDMJI0Z8nJeKkbOs9sBYQw==}
+    peerDependencies:
+      monaco-editor: '>= 0.25.0 < 1'
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+    dependencies:
+      '@monaco-editor/loader': 1.4.0_monaco-editor@0.52.0
+      monaco-editor: 0.52.0
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+    dev: false
 
   /@nicolo-ribaudo/eslint-scope-5-internals/5.1.1-v1:
     resolution: {integrity: sha512-54/JRvkLIzzDWshCWfuhadfrfZVPiElY8Fcgmg1HroEly/EDSszzhBAsarCux+D/kOslTRquNzuyGSmUSTTHGg==}
@@ -13574,19 +13596,6 @@ packages:
       react: 18.2.0
     dev: false
 
-  /react-monaco-editor/0.56.2_z7xue7bqoyl5qolixcdtatmdwm:
-    resolution: {integrity: sha512-Tp5U3QF9h92Cuf0eIhGd8Jyef8tPMlEJC2Dk1GeuR/hj6WoFn8AgjVX/2dv+3l5DvpMUpAECcFarc3eFKTBZ5w==}
-    peerDependencies:
-      '@types/react': '>=16 <= 18'
-      monaco-editor: ^0.52.0
-      react: '>=16 <= 18'
-    dependencies:
-      '@types/react': 18.2.21
-      monaco-editor: 0.52.0
-      prop-types: 15.8.1
-      react: 18.2.0
-    dev: false
-
   /react-refresh/0.11.0:
     resolution: {integrity: sha512-F27qZr8uUqwhWZboondsPx8tnC3Ct3SxZA3V5WyEvujRyyNv0VYPhoBg1gZ8/MV5tubQp76Trw8lTv9hzRBa+A==}
     engines: {node: '>=0.10.0'}
@@ -14639,6 +14648,10 @@ packages:
 
   /stackframe/1.3.4:
     resolution: {integrity: sha512-oeVtt7eWQS+Na6F//S4kJ2K2VbRlS9D43mAlMyVpVWovy9o+jfgH8O9agzANzaiLjclA0oYzUXEM4PurhSUChw==}
+
+  /state-local/1.0.7:
+    resolution: {integrity: sha512-HTEHMNieakEnoe33shBYcZ7NX83ACUjCu8c40iOGEZsngj9zRnkqS9j1pqQPXwobB0ZcVTk27REb7COQ0UR59w==}
+    dev: false
 
   /statuses/1.5.0:
     resolution: {integrity: sha512-OpZ3zP+jT1PI7I8nemJX4AKmAX070ZkYPVWV/AaKTJl+tXCTGyVdC1a4SL8RUQYEwk/f34ZX8UTykN68FwrqAA==}
