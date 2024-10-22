@@ -8,11 +8,12 @@
 	"scripts": {
 		"build": "webpack --env NODE_ENV=production   ",
 		"dev": "webpack serve --env  NODE_ENV=development APP_ENV=test",
-		"start": "npm run dev",
+		"start": "npm run dev:rs",
 		"prepare": "husky install",
 		"lint": "npx lint-staged",
 		"start:vite": "vite",
-		"dev:rs": "cross-env NODE_ENV=development rspack serve"
+		"dev:rs": "cross-env NODE_ENV=development rspack serve",
+		"server": "cross-env NODE_ENV=development rspack serve --config=server/rspack.config.js"
 	},
 	"husky": {
 		"hooks": {
@@ -37,6 +38,7 @@
 		"@babel/traverse": "^7.22.11",
 		"@babel/types": "^7.22.11",
 		"@jongwong/react-live-editor": "1.0.0-beta.0",
+		"@module-federation/enhanced": "^0.6.11",
 		"@monaco-editor/react": "^4.6.0",
 		"ahooks": "^3.7.7",
 		"antd": "^5.8.5",
@@ -56,6 +58,7 @@
 		"react-router": "^5.3.4",
 		"react-router-config": "^5.1.1",
 		"uuid": "^3.3.3",
+		"webpack-dev-middleware": "^7.4.2",
 		"xterm": "^5.2.1"
 	},
 	"devDependencies": {
@@ -67,6 +70,7 @@
 		"@rollup/plugin-babel": "^6.0.4",
 		"@rspack/cli": "^1.0.10",
 		"@rspack/core": "^1.0.10",
+		"@rspack/dev-middleware": "^0.2.12",
 		"@rspack/plugin-react-refresh": "1.0.0",
 		"@types/babel__generator": "^7.6.4",
 		"@types/babel__template": "^7.4.1",
@@ -89,6 +93,7 @@
 		"babel-plugin-transform-runtime": "^6.23.0",
 		"buffer": "^6.0.3",
 		"clean-webpack-plugin": "^4.0.0",
+		"cors": "^2.8.5",
 		"cross-env": "^7.0.3",
 		"css-loader": "^6.8.1",
 		"cssnano": "^5.0.6",
@@ -118,6 +123,7 @@
 		"less-loader": "^7.3.0",
 		"less-plugin-import-node-modules": "^1.0.0",
 		"lint-staged": "^13.2.2",
+		"memfs": "^4.14.0",
 		"mini-css-extract-plugin": "^2.1.0",
 		"monaco-editor-webpack-plugin": "^7.1.0",
 		"optimize-css-assets-webpack-plugin": "^6.0.1",
@@ -142,6 +148,7 @@
 		"tslib": "^2.6.2",
 		"typescript": "^4.9.5",
 		"typescript-eslint": "^8.5.0",
+		"unionfs": "^4.5.4",
 		"url-loader": "^4.1.1",
 		"vite": "^4.3.8",
 		"vite-plugin-eslint": "^1.8.1",

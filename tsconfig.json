@@ -2,7 +2,7 @@
 	"compilerOptions": {
 		"baseUrl": ".",
 		"rootDir": "./",
-		"target": "esnext",
+		"target": "es2020",
 		"lib": ["es6", "dom"],
 		"paths": {
 			"@/*": ["./src/*"],
@@ -10,7 +10,7 @@
 			"@public/*": ["./public/*"],
 		},
 		"sourceMap": true,
-		"module": "ES6",
+		"module": "esnext",
 		"jsx": "react-jsx",
 		"strict": true,
 		"noEmit": true,
