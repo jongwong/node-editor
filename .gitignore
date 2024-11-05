@@ -13,6 +13,9 @@
 .idea
 dist
 lib
+
+
+
 # misc
 .DS_Store
 .env.local
@@ -25,4 +28,5 @@ yarn-debug.log*
 yarn-error.log*
 
 
-src/.preview/index.tsx
+
+/src/.preview/index.tsx
