@@ -49,16 +49,26 @@ export const onItemDropASTHandle = ({ item, getNodeById, container }, cb) => {
 
 	cb(moveParentNode, targetParentNode);
 };
-export const onMaterialItemDrop = ({
-	item,
-	getNodeById,
-	updateAst,
-	containerId,
-	getPathKeyById,
-	containerParentId,
-	getAst,
-}) => {
-	const astJson = getAst();
+export const onMaterialItemDrop = (
+	{
+		item,
+		container,
+		getASTJson,
+		getNodeById,
+		getPathKeyById,
+	}: {
+		item: any;
+		container: {
+			id: string;
+			parentId: string;
+		};
+		getASTJson: () => any;
+		getNodeById: (id: string) => any;
+		getPathKeyById: (id: string) => string;
+	},
+	cb: (ast: any) => void
+) => {
+	const astJson = getASTJson();
 	const importName = item?.materialData?.import;
 	const name = item?.materialData?.name;
 	let find = false;
@@ -108,11 +118,11 @@ export const onMaterialItemDrop = ({
 	}
 	const newElNode = wrapperJSXElement(name, child);
 
-	const targetFindPath = getPathKeyById(containerParentId);
+	const targetFindPath = getPathKeyById(container.parentId);
 
-	let targetFind = getNodeById(containerParentId);
+	let targetFind = getNodeById(container.parentId);
+	const idx = targetFind?.children?.findIndex(it => getUUidByNode(it) === container.id);
 
-	const idx = targetFind?.children?.findIndex(it => getUUidByNode(it) === containerId);
 	if (idx < 0 || isNil(idx)) {
 		return;
 	}
@@ -121,5 +131,6 @@ export const onMaterialItemDrop = ({
 	targetFind = resetFlatChildrenItemRemark(targetFind);
 
 	set(astJson, targetFindPath, targetFind);
-	updateAst(astJson);
+	logAstJsxIndex(astJson, 'Card', 0, true);
+	cb(astJson);
 };

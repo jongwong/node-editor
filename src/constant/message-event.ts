@@ -10,4 +10,5 @@ export enum LowCodeMessageEvent {
 	LowcodeInstanceData = 'LowcodeInstanceData',
 	IframeReady = 'IframeReady',
 	OnItemDrop = 'OnItemDrop',
+	DraggingStateChange = 'DraggingStateChange',
 }

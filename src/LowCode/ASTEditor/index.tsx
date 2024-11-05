@@ -35,7 +35,6 @@ import useLowCodeContext, {
 	useTransformCode,
 } from '@/LowCode/ASTEditor/ASTExplorer/useLowCodeContext';
 import LowCodeContextDataProvider from '@/LowCode/ASTEditor/ASTExplorer/useLowCodeContext';
-import CodePreview from '@/LowCode/ASTEditor/CodePreview';
 import rawCode from '@/LowCode/ASTEditor/raw-code';
 import {
 	addEditMark,
@@ -320,24 +319,13 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 						</div>
 
 						<div className={'other-panel'} ref={previewElRef as any} style={{ marginTop: '50px' }}>
-							{getQueryParams()?.type !== 'live' ? (
-								// <PreviewSever />
-								<iframe
-									src={ServerUrl + '/preview'}
-									id={'lowcode-preview'}
-									width={'100%'}
-									height={'100%'}
-									style={{ border: 'none' }}
-								/>
-							) : (
-								<CodePreview
-									onPreviewReRender={() => {
-										// reload();
-									}}
-									files={[{ filename: 'index.tsx', code: transformCode }]}
-									demoId="modalPath"
-								/>
-							)}
+							<iframe
+								src={ServerUrl + '/preview'}
+								id={'lowcode-preview'}
+								width={'100%'}
+								height={'100%'}
+								style={{ border: 'none' }}
+							/>
 						</div>
 					</div>
 

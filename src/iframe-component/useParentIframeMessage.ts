@@ -147,3 +147,6 @@ function useParentIframeMessage(getInstanceData: () => any) {
 }
 
 export default useParentIframeMessage;
+export const postDraggingStateChange = (e: boolean) => {
+	postMessageToChild(LowCodeMessageEvent.DraggingStateChange, e);
+};

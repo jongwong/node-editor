@@ -356,6 +356,7 @@ export const logAstJsxIndex = (ast: any, name: string, index = 0, removeRemark?:
 			}
 		},
 	});
+	console.log('logAstJsxIndex:', re);
 	return re;
 };
 

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 
 import { atom, useAtomValue, useSetAtom } from 'jotai';
 import { useAtom } from 'jotai/index';
-import { get } from 'lodash';
+import { before, get } from 'lodash';
 
 import { LowCodeMessageEvent } from '@/constant/message-event';
 import {
@@ -12,6 +12,11 @@ import {
 	wrapperMessage,
 } from '@/iframe-component/utils';
 import { findNodePathLocationByUid } from '@/LowCode/ASTEditor/utils/ast-node';
+import {
+	addClassName,
+	clearClosest,
+	removeClassName,
+} from '@/LowCode/ASTEditor/utils/dom/class-operation';
 
 // Define atoms to hold the received state values
 export const currentItemIdAtom = atom('');
@@ -51,6 +56,15 @@ export const IframeListenProvider: React.FC<{ children: React.ReactNode }> = ({ 
 					break;
 				case LowCodeMessageEvent.LowcodeInstanceData:
 					window.lowcodeInstanceData = payload;
+					break;
+				case LowCodeMessageEvent.DraggingStateChange:
+					if (payload) {
+						addClassName(document.body, 'low-code-container__dragging');
+					} else {
+						removeClassName(document.body, 'low-code-container__dragging');
+						clearClosest();
+					}
+
 					break;
 				default:
 					console.warn(`Unknown message type: ${type}`);
