@@ -2,16 +2,15 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 
 import classNames from 'classnames';
-import { set } from 'lodash';
 
-import { useLowCodeInstance } from '@/LowCode/ASTEditor/ASTExplorer/useLowCodeContext';
+import { LowCodeMessageEvent } from '@/constant/message-event';
+import useIframeInstance, {
+	useASTJson,
+	useCurrentItemId,
+} from '@/iframe-component/useIframeInstance';
+import { isIframe, postMessageToParent, wrapperMessage } from '@/iframe-component/utils';
 import { EDragItemType, EOperationClassName } from '@/LowCode/ASTEditor/constants';
-import {
-	getJSXElementName,
-	logAstJsxIndex,
-	renderNodeName,
-} from '@/LowCode/ASTEditor/utils/ast-node';
-import { onItemDrop } from '@/LowCode/ASTEditor/utils/ast-node/move';
+import { renderNodeName } from '@/LowCode/ASTEditor/utils/ast-node';
 import { hasDraggingElement } from '@/LowCode/ASTEditor/utils/dom';
 import {
 	addClassName,
@@ -20,27 +19,24 @@ import {
 } from '@/LowCode/ASTEditor/utils/dom/class-operation';
 import { hasClassName } from '@/LowCode/util';
 
+import '../index.less';
+
 import ErrorBound from '../ErrorBound';
 
 type LowCodeDragItemProps = {
 	children?: React.ReactNode;
 	_low_code_child_id: string;
+	_low_code_id: string;
+	_low_code_parent_id: string;
 };
 
 const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 	// eslint-disable-next-line react/prop-types
 	const { _low_code_child_id, _low_code_id, _low_code_parent_id, ...rest } = props;
 
-	const {
-		getNodeById,
-		ast,
-		getTestNonePathMap,
-		getAst,
-		onComponentDoubleClick,
-		getPathKeyById,
-		currentItemId,
-		updateAst,
-	} = useLowCodeInstance();
+	const currentItemId = useCurrentItemId();
+	const ASTJson = useASTJson();
+	const { getNodeById } = useIframeInstance();
 
 	const curData = getNodeById(_low_code_id);
 	const childNode = getNodeById(_low_code_child_id);
@@ -62,13 +58,13 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 					const containerId = el.getAttribute('_low_code_id');
 					const containerParentId = el.getAttribute('_low_code_parent_id');
 
-					onItemDrop(
-						{ item, getNodeById, containerId, containerParentId },
-						(moveParentNode, targetParentNode) => {
-							const astJson = getAst();
-							updateAst?.(astJson);
-						}
-					);
+					// onItemDrop(
+					// 	{ item, getNodeById, containerId, containerParentId },
+					// 	(moveParentNode, targetParentNode) => {
+					// 		const astJson = getAst();
+					// 		updateAst?.(astJson);
+					// 	}
+					// );
 				}
 				setTimeout(() => {
 					removeClassName(document.body, 'low-code-container__dragging');
@@ -79,13 +75,26 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 				isDragging: monitor.isDragging(),
 			}),
 		}),
-		[ast, _low_code_id, _low_code_parent_id]
+		[ASTJson, _low_code_id, _low_code_parent_id]
 	);
 
 	const elRef = useRef<HTMLElement>();
 
 	const isSelect = currentItemId === _low_code_id;
 
+	// Handler for double-click event
+	const handleDoubleClick = e => {
+		postMessageToParent(LowCodeMessageEvent.LowCodeDragItemDoubleClick, {
+			props,
+		});
+
+		e.stopPropagation();
+		e.preventDefault();
+		return false;
+	};
+	if (!isIframe()) {
+		return props.children;
+	}
 	return (
 		<div
 			className={classNames(
@@ -103,14 +112,7 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 				opacity: isDragging ? '0.3' : 'unset',
 				overflow: isDragging || isSelect ? 'auto' : undefined,
 			}}
-			onDoubleClick={e => {
-				const _curData = getNodeById(_low_code_child_id);
-				onComponentDoubleClick?.(props, _curData);
-
-				e.stopPropagation();
-				e.preventDefault();
-				return false;
-			}}
+			onDoubleClick={handleDoubleClick}
 			onMouseOver={e => {
 				if (!elRef.current || hasDraggingElement()) {
 					e.stopPropagation();
@@ -141,4 +143,3 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 	);
 };
 export default LowCodeDragItem;
-window.LowCodeDragItem = LowCodeDragItem;

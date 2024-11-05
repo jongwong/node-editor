@@ -6,7 +6,6 @@ import monacoEditorPlugin from 'vite-plugin-monaco-editor';
 const babel = require('@rollup/plugin-babel');
 import Buffer from 'buffer';
 import * as fs from 'fs';
-const { DefinePlugin } = require('@rspack/core');
 
 function rawTxtPlugin() {
 	return {
@@ -29,12 +28,22 @@ export default defineConfig({
 	server: {
 		port: 3000,
 		host: '0.0.0.0',
+		proxy: {
+			// Proxy all requests starting with `/api` to `http://localhost:5000`
+			'/preview': {
+				target: 'http://localhost:3001',
+				changeOrigin: true, // Change the origin to match the target server
+				rewrite: path => path,
+			},
+			'/api': {
+				target: 'http://localhost:3001',
+				changeOrigin: true, // Change the origin to match the target server
+				rewrite: path => path.replace(/^\/api/, ''),
+			},
+		},
 	},
 
 	plugins: [
-		new ProvidePlugin({
-			process: [require.resolve('process/browser')],
-		}),
 		react(), // 代替 ReactRefreshWebpackPlugin
 		monacoEditorPlugin({
 			// 代替 MonacoWebpackPlugin

@@ -106,3 +106,15 @@ export function isHorizontalOrVertical(element) {
 	}
 	return 'vertical';
 }
+
+export function getQueryParams() {
+	const url = new URL(window.location.href); // 获取当前页面的 URL
+	const params = new URLSearchParams(url.search);
+
+	const queryParams: Record<string, any> = {};
+	params.forEach((value, key) => {
+		queryParams[key] = value;
+	});
+
+	return queryParams;
+}

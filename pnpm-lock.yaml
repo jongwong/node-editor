@@ -74,6 +74,7 @@ specifiers:
   globals: ^15.9.0
   html-webpack-plugin: ^5.5.0
   husky: ^8.0.0
+  jotai: ^2.10.1
   jsdom: ^21.1.2
   less: ^4.1.1
   less-loader: ^7.3.0
@@ -148,6 +149,7 @@ dependencies:
   color: 4.2.3
   deep-equal: 2.2.2
   esbuild-wasm: 0.18.20
+  jotai: 2.10.1_gq4reeurwxuj4hvyerswzzqthy
   lodash: 4.17.21
   mitt: 3.0.1
   monaco-editor: 0.52.0
@@ -10718,6 +10720,22 @@ packages:
   /jiti/1.19.3:
     resolution: {integrity: sha512-5eEbBDQT/jF1xg6l36P+mWGGoH9Spuy0PCdSr2dtWRDGC6ph/w9ZCL4lmESW8f8F7MwT3XKescfP0wnZWAKL9w==}
     hasBin: true
+
+  /jotai/2.10.1_gq4reeurwxuj4hvyerswzzqthy:
+    resolution: {integrity: sha512-4FycO+BOTl2auLyF2Chvi6KTDqdsdDDtpaL/WHQMs8f3KS1E3loiUShQzAzFA/sMU5cJ0hz/RT1xum9YbG/zaA==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@types/react': '>=17.0.0'
+      react: '>=17.0.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      react:
+        optional: true
+    dependencies:
+      '@types/react': 18.2.21
+      react: 18.2.0
+    dev: false
 
   /js-cookie/2.2.1:
     resolution: {integrity: sha512-HvdH2LzI/EAZcUwA8+0nKNtWHqS+ZmijLA30RwZA0bo7ToCckjK5MkGhjED9KoRcXO6BaGI3I9UIzSA1FKFPOQ==}

@@ -22,13 +22,19 @@ import {
 } from 'lodash';
 import * as monaco from 'monaco-editor';
 
+import LowCodeDragItem from '@/iframe-component/LowCodeDragItem';
+import LowCodeItemContainer from '@/iframe-component/LowCodeItemContainer';
+import useParentIframeMessage from '@/iframe-component/useParentIframeMessage';
 import AttributePanel from '@/LowCode/ASTEditor/ASTExplorer/AttributePanel';
 import { astViewTheme, initOtherConfig } from '@/LowCode/ASTEditor/ASTExplorer/init';
 import MaterialPanel from '@/LowCode/ASTEditor/ASTExplorer/MaterialPanel';
 import TreePanel from '@/LowCode/ASTEditor/ASTExplorer/TreePanel';
 import useLowCodeContext, {
-	LowCodeContextProvider,
+	useASTJson,
+	useLowCodeInstance,
+	useTransformCode,
 } from '@/LowCode/ASTEditor/ASTExplorer/useLowCodeContext';
+import LowCodeContextDataProvider from '@/LowCode/ASTEditor/ASTExplorer/useLowCodeContext';
 import CodePreview from '@/LowCode/ASTEditor/CodePreview';
 import rawCode from '@/LowCode/ASTEditor/raw-code';
 import {
@@ -39,6 +45,8 @@ import {
 	removeEditMark,
 	removeEditMarkAst,
 } from '@/LowCode/ASTEditor/utils';
+import { bundleFiles, ServerUrl } from '@/LowCode/ASTEditor/utils/bundle-service';
+import { getQueryParams } from '@/LowCode/ASTEditor/utils/dom';
 
 import './index.less';
 
@@ -53,31 +61,31 @@ import {
 const HINT_CLASSNAME = 'monaco-find-ast-remark';
 const modalPath = 'ASTExplorer/default';
 
+window.LowCodeItemContainer = LowCodeItemContainer;
+
+window.LowCodeDragItem = LowCodeDragItem;
+
 const Index: React.FC<{ children?: React.ReactNode }> = props => {
 	const [code, setCode] = useState(prettierFormat(rawCode || ''));
 
 	const previewElRef = useRef<HTMLDivElement>();
 	const astJsonRef = useRef({});
-	const getAstJson = () => astJsonRef.current;
+	const getASTJson = () => astJsonRef.current;
 	const [showDebugPanel, setShowDebugPanel] = useState(false);
 
 	const initCodeRef = useRef(false);
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>();
 	const newEditRef = useRef<monaco.editor.IStandaloneCodeEditor>();
 	const monacoRef = useRef<typeof monaco>();
-
-	const { astJson, providerValues, reload, transformCode, transform } = useLowCodeContext({
-		onCodeChange: e => {
-			setCode(e);
-		},
-		preElement: previewElRef.current,
-	});
+	const [transformCode] = useTransformCode();
+	const [astJson] = useASTJson();
+	const { transform, ready } = useLowCodeInstance();
 
 	const lastDecorationsRef = useRef<string[]>();
 
 	const { run: showKeyMark } = useDebounceFn(
 		(ketList: string[]) => {
-			const loc = getLocByKeysList(ketList, getAstJson());
+			const loc = getLocByKeysList(ketList, getASTJson());
 			if (!loc) {
 				return;
 			}
@@ -147,6 +155,8 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 				m?.setValue(code);
 			}
 		}
+		// 初始化code
+		transform(code);
 	}, [code]);
 	const [searchNodeStr, setSearchNodeStr] = useState('');
 
@@ -197,7 +207,7 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 				setCursorSelectionRangeKeyList([]);
 				return;
 			}
-			const list = findKeyListByLoc(_cursorSelectionLoc, getAstJson());
+			const list = findKeyListByLoc(_cursorSelectionLoc, getASTJson());
 			setCursorSelectionRangeKeyList(list);
 			setTimeout(() => {
 				scrollToMarkJsonNode();
@@ -205,10 +215,6 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 		},
 		{ wait: 300 }
 	);
-
-	useEffect(() => {
-		transform(code);
-	}, []);
 
 	const renderVerticalText = (text: string) => {
 		return (
@@ -223,9 +229,25 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 			</span>
 		);
 	};
+
+	useEffect(() => {
+		if (transformCode) {
+			bundleFiles([
+				{
+					filename: 'index.tsx',
+					code: transformCode,
+				},
+			]);
+		}
+	}, [transformCode]);
 	return (
 		<div>
-			<LowCodeContextProvider value={providerValues}>
+			<LowCodeContextDataProvider
+				onCodeChange={e => {
+					setCode(e);
+				}}
+				preElement={previewElRef.current}
+			>
 				<DndProvider backend={HTML5Backend} context={window}>
 					<div style={{ display: 'grid', gridTemplateColumns: '30%  30% auto' }}>
 						<div>
@@ -298,12 +320,19 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 						</div>
 
 						<div className={'other-panel'} ref={previewElRef as any} style={{ marginTop: '50px' }}>
-							{has(props, 'children') ? (
-								props?.children
+							{getQueryParams()?.type !== 'live' ? (
+								// <PreviewSever />
+								<iframe
+									src={ServerUrl + '/preview'}
+									id={'lowcode-preview'}
+									width={'100%'}
+									height={'100%'}
+									style={{ border: 'none' }}
+								/>
 							) : (
 								<CodePreview
 									onPreviewReRender={() => {
-										reload();
+										// reload();
 									}}
 									files={[{ filename: 'index.tsx', code: transformCode }]}
 									demoId="modalPath"
@@ -414,7 +443,7 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 						onClick={() => setShowDebugPanel(!showDebugPanel)}
 					></FloatButton>
 				</DndProvider>
-			</LowCodeContextProvider>
+			</LowCodeContextDataProvider>
 		</div>
 	);
 };

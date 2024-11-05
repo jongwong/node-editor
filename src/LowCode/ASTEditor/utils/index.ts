@@ -76,6 +76,10 @@ export const generateCode = (ast, code = '') => {
 
 export const getNodeUIDPathMap = ast => {
 	const ob = {};
+	if (ast?.type !== 'Program') {
+		return {}; // 如果已经是 Program，直接返回
+	}
+
 	traverse(ast, {
 		exit(path) {
 			const id = getUUidByNode(path.node);

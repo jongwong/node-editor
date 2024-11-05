@@ -1,11 +1,18 @@
 const fs = require('fs');
 const path = require('path');
-const { formatPathname } = require('../utils');
+const cors = require('cors');
+const express = require('express');
 // Object to maintain status codes
 const StatusCodes = {
 	SUCCESS: 0,
 	BAD_REQUEST: 400,
 	INTERNAL_ERROR: 500,
+};
+
+const severDir = 'src/.preview';
+
+const formatPathname = (filename, dir = '/') => {
+	return path.resolve(process.cwd(), dir, filename.startsWith('/') ? filename.slice(1) : filename);
 };
 
 // Factory function for creating response objects
@@ -16,7 +23,10 @@ const createResponse = (message, code, success) => {
 const formatFiles = (files = []) => {
 	const li = files?.map(it => ({
 		...it,
-		filename: formatPathname(it.filename.startsWith('/') ? it.filename.slice(1) : it.filename),
+		filename: formatPathname(
+			it.filename.startsWith('/') ? it.filename.slice(1) : it.filename,
+			severDir
+		),
 	}));
 	return li;
 };
@@ -29,7 +39,16 @@ const Home: React.FC = props => {
 export default Home;`;
 
 const middlewaresInit = app => {
-	fs.promises.writeFile(formatPathname('src/App/index.tsx'), initCode);
+	// 启用 CORS，允许所有跨域请求
+	app.use(cors());
+
+	// 使用 bodyParser 解析 application/json
+	app.use(express.json());
+
+	// 使用 bodyParser 解析 application/x-www-form-urlencoded
+	app.use(express.urlencoded({ extended: true }));
+
+	fs.promises.writeFile(formatPathname('index.tsx', severDir), initCode);
 
 	app.get('/ping', (req, res) => {
 		res.json({ message: 'pong' });
@@ -42,9 +61,7 @@ const middlewaresInit = app => {
 				.status(StatusCodes.BAD_REQUEST)
 				.json(createResponse('Request body must be an array.', StatusCodes.BAD_REQUEST, false));
 		}
-
 		const responses = []; // To store the response for each file update
-
 		try {
 			// Create an array of promises for updating files
 			const updatePromises = formatFiles(files).map(async ({ filename, code }) => {
@@ -54,7 +71,7 @@ const middlewaresInit = app => {
 
 				// Define the path where the file is located
 				const filePath = filename; // Adjust the path as necessary
-
+				console.log(filePath);
 				try {
 					// Write the new content to the specified file
 					await fs.promises.writeFile(filePath, code);
@@ -83,4 +100,5 @@ const middlewaresInit = app => {
 };
 module.exports = {
 	middlewaresInit,
+	formatPathname,
 };

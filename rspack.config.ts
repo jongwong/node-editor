@@ -1,10 +1,11 @@
 import { defineConfig } from '@rspack/cli';
 import { DefinePlugin, ProvidePlugin, rspack } from '@rspack/core';
 import * as RefreshPlugin from '@rspack/plugin-react-refresh';
-import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import * as path from 'path';
+
 const { ModuleFederationPlugin } = require('@module-federation/enhanced/rspack');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
+const { middlewaresInit } = require('./server/middlewares');
 
 const isDev = process.env.NODE_ENV === 'development';
 // Target browsers, see: https://github.com/browserslist/browserslist
@@ -25,6 +26,10 @@ export default defineConfig({
 		globalObject: 'self',
 		filename: '[name].bundle.js',
 		path: path.resolve(__dirname, 'dist'),
+	},
+	externals: {
+		LowCodeDragItem: 'LowCodeDragItem',
+		LowCodeItemContainer: 'LowCodeItemContainer',
 	},
 	resolve: {
 		extensions: ['.js', '.tsx', '.ts', '.json', '.css', '.less'],
@@ -136,5 +141,22 @@ export default defineConfig({
 		port: 3000,
 		hot: true,
 		liveReload: true,
+		proxy: {
+			// Proxy all requests starting with `/api` to `http://localhost:5000`
+			'/server': {
+				target: 'http://localhost:3001',
+				changeOrigin: true, // Changes the origin of the host header to the target URL
+				pathRewrite: { '^/server': '' }, // Remove `/api` prefix when forwarding
+			},
+		},
+		setupMiddlewares: (middlewares, devServer) => {
+			if (!devServer) {
+				throw new Error('@rspack/dev-server is not defined');
+			}
+
+			middlewaresInit(devServer.app);
+
+			return middlewares;
+		},
 	},
 });

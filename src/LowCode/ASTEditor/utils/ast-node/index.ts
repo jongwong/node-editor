@@ -129,7 +129,19 @@ export const createNewContainer = (pUid: string, cUid: string) => {
 export const findNodeByUid = (node, uuid) => {
 	let find: any;
 
-	traverse(node, {
+	traverse(ensureProgramAst(node), {
+		enter: path => {
+			if (uuid && getUUidByNode(path.node) === uuid) {
+				find = path.node;
+			}
+		},
+	});
+	return find;
+};
+export const findNodePathLocationByUid = (node, uuid) => {
+	let find: string;
+
+	traverse(ensureProgramAst(node), {
 		enter: path => {
 			if (uuid && getUUidByNode(path.node) === uuid) {
 				find = path.getPathLocation();
@@ -348,7 +360,7 @@ export const logAstJsxIndex = (ast: any, name: string, index = 0, removeRemark?:
 };
 
 export const ensureProgramAst = (ast: any) => {
-	if (ast.type === 'Program') {
+	if (ast?.type === 'Program' || ast?.type === 'File') {
 		return ast; // 如果已经是 Program，直接返回
 	}
 

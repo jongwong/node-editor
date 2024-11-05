@@ -1,57 +1,31 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useDrag, useDragLayer, useDrop } from 'react-dnd';
 
-import traverse, { NodePath } from '@babel/traverse';
-import {
-	importDeclaration,
-	importDefaultSpecifier,
-	importSpecifier,
-	isImportDeclaration,
-	jSXText,
-	jsxText,
-	stringLiteral,
-} from '@babel/types';
 import classNames from 'classnames';
-import { findIndex, findLastIndex, get, last, set, take, toPath } from 'lodash';
 
-import { useLowCodeInstance } from '@/LowCode/ASTEditor/ASTExplorer/useLowCodeContext';
+import useIframeInstance, {
+	useASTJson,
+	useCurrentItemId,
+} from '@/iframe-component/useIframeInstance';
 import { EDragItemType } from '@/LowCode/ASTEditor/constants';
-import {
-	addEditMark,
-	reInsertContainer,
-	removeEditMark,
-	removeEditMarkAst,
-} from '@/LowCode/ASTEditor/utils';
-import {
-	findNodeByUid,
-	getIndexByParent,
-	getJSXElementName,
-	getUUidByNode,
-	logChildren,
-	wrapperJSXElement,
-} from '@/LowCode/ASTEditor/utils/ast-node';
-import { isHorizontalOrVertical } from '@/LowCode/ASTEditor/utils/dom';
-import { addClassName, clearClosest } from '@/LowCode/ASTEditor/utils/dom/class-operation';
-import { hasClassName } from '@/LowCode/util';
+import { getJSXElementName } from '@/LowCode/ASTEditor/utils/ast-node';
+
+import '../index.less';
+
+import { isHorizontalOrVertical, isIframe } from '../utils';
 
 type LowCodeItemContainerProps = {
 	children?: React.ReactNode;
 	_low_code_id: string;
+	_low_code_parent_id: string;
 };
 
 const LowCodeItemContainer: React.FC<LowCodeItemContainerProps> = props => {
-	// eslint-disable-next-line react/prop-types
 	const { _low_code_id: uuid, _low_code_parent_id, ...rest } = props;
-	const {
-		getAst,
-		astJson: astJsonData,
-		getNodeById,
-		getPathKeyById,
-		getTestNonePathMap,
-		currentItemId,
-		getPathById,
-		updateAst,
-	} = useLowCodeInstance();
+
+	const currentItemId = useCurrentItemId();
+	const ASTJson = useASTJson();
+	const { getNodeById } = useIframeInstance();
 	const curRef = useRef<HTMLDivElement | null>();
 	const parentNode = useMemo(
 		() => getNodeById(_low_code_parent_id),
@@ -71,7 +45,7 @@ const LowCodeItemContainer: React.FC<LowCodeItemContainerProps> = props => {
 				};
 			},
 		}),
-		[astJsonData, uuid]
+		[ASTJson, uuid]
 	);
 	useEffect(() => {
 		if (item) {
@@ -100,6 +74,9 @@ const LowCodeItemContainer: React.FC<LowCodeItemContainerProps> = props => {
 		_low_code_id: uuid,
 		_low_code_parent_id: _low_code_parent_id,
 	};
+	if (isIframe()) {
+		return null;
+	}
 	return (
 		<div
 			className={classNames('low-code-container', direction && 'low-code-container-' + direction)}
@@ -115,4 +92,3 @@ const LowCodeItemContainer: React.FC<LowCodeItemContainerProps> = props => {
 };
 
 export default LowCodeItemContainer;
-window.LowCodeItemContainer = LowCodeItemContainer;
