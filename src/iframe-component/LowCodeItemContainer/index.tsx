@@ -74,7 +74,7 @@ const LowCodeItemContainer: React.FC<LowCodeItemContainerProps> = props => {
 		_low_code_id: uuid,
 		_low_code_parent_id: _low_code_parent_id,
 	};
-	if (isIframe()) {
+	if (!isIframe()) {
 		return null;
 	}
 	return (

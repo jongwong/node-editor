@@ -68,6 +68,7 @@ specifiers:
   eslint-plugin-react-hooks: ^4.6.0
   eslint-plugin-simple-import-sort: ^10.0.0
   eslint-webpack-plugin: ^4.0.1
+  eventemitter2: ^6.4.9
   file-loader: ^6.2.0
   fork-ts-checker-webpack-plugin: ^6.5.3
   friendly-errors-webpack-plugin: ^1.7.0
@@ -149,6 +150,7 @@ dependencies:
   color: 4.2.3
   deep-equal: 2.2.2
   esbuild-wasm: 0.18.20
+  eventemitter2: 6.4.9
   jotai: 2.10.1_gq4reeurwxuj4hvyerswzzqthy
   lodash: 4.17.21
   mitt: 3.0.1
@@ -8461,6 +8463,10 @@ packages:
   /etag/1.8.1:
     resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
     engines: {node: '>= 0.6'}
+
+  /eventemitter2/6.4.9:
+    resolution: {integrity: sha512-JEPTiaOt9f04oa6NOkc4aH+nVp5I3wEjpHbIPqfgCdD5v5bUzy7xQqwcVO2aDQgOWhI28da57HksMrzK9HlRxg==}
+    dev: false
 
   /eventemitter3/4.0.7:
     resolution: {integrity: sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw==}

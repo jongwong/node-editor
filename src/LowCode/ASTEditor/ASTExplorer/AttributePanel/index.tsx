@@ -1,11 +1,15 @@
-import React, { useContext, useEffect, useMemo, useRef } from 'react';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, Form, Input, Radio, Select } from 'antd';
 import { forEach, forIn, set, values } from 'lodash';
+import uuid from 'uuid';
 
+import { LowCodeMessageEvent } from '@/constant/message-event';
+import { useCurrentItemChildId, useCurrentItemId } from '@/iframe-component/useIframeInstance';
 import { useLowCodeInstance } from '@/LowCode/ASTEditor/ASTExplorer/useLowCodeContext';
 import { getJsxNameAndImport, updateJSXTextNode } from '@/LowCode/ASTEditor/utils/ast-node';
 import { updateAttributeValue } from '@/LowCode/ASTEditor/utils/operation';
+import emitter from '@/utils/event';
 
 const { Item } = Form;
 const valueTypeMap = {
@@ -38,35 +42,31 @@ type AttributePanelProps = {
 const AttributePanel: React.FC<AttributePanelProps> = props => {
 	const { code, ...rest } = props;
 	const [form] = Form.useForm();
-	const {
-		currentItemChildId,
-		currentItemId,
-		getNodeById,
-		getPathKeyById,
-		getAttributeValues,
-		getAst,
-		updateAst,
-		getMaterialStore,
-	} = useLowCodeInstance();
-	const curNode = useMemo(
-		() => (currentItemChildId ? getNodeById(currentItemChildId) : undefined),
-		[currentItemChildId, currentItemId]
-	);
 
+	const [currentItemId] = useCurrentItemId();
+	const [currentItemChildId] = useCurrentItemChildId();
+	const { getNodeById, getPathKeyById, getASTJson, updateASTJson, getMaterialStore } =
+		useLowCodeInstance();
+	const [attributeValues, setAttributeValues] = useState<any>({});
+	const [forceUpdateFormId, setForceUpdateFormId] = useState('');
+	const curNode = useMemo(() => {
+		return currentItemChildId ? getNodeById(currentItemChildId) : undefined;
+	}, [currentItemChildId, currentItemId, forceUpdateFormId]);
 	const oldValueMap = useRef({});
 	const attribute = useMemo(() => {
 		if (!curNode) {
 			return [];
 		}
-		const re = getJsxNameAndImport(curNode, getAst());
+		const xx = getMaterialStore();
+		const re = getJsxNameAndImport(curNode, getASTJson());
 		const find = getMaterialStore().data.find(
 			it => it?.name === re?.name && it?.import === re?.import
 		);
 		return find?.attribute || [];
-	}, [curNode]);
+	}, [curNode, forceUpdateFormId]);
 	useEffect(() => {
 		form.resetFields();
-		const map = getAttributeValues();
+		const map = attributeValues;
 
 		forEach(attribute, (it, idx) => {
 			const ob = {
@@ -76,8 +76,18 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 			form.setFields([ob]);
 		});
 		oldValueMap.current = map;
-	}, [attribute, currentItemId, currentItemChildId]);
+	}, [attributeValues, attribute, currentItemId, currentItemChildId, forceUpdateFormId]);
 
+	useEffect(() => {
+		const _handle = e => {
+			setAttributeValues(e);
+			setForceUpdateFormId(uuid());
+		};
+		emitter.on(LowCodeMessageEvent.AttributeValueChange, _handle);
+		return () => {
+			emitter.off(LowCodeMessageEvent.AttributeValueChange, _handle);
+		};
+	}, []);
 	const getRender = it => {
 		if (it.valueEnum) {
 			const op = values(it.valueEnum);
@@ -95,9 +105,9 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 					const _node = getNodeById(currentItemChildId);
 					const _path = getPathKeyById(currentItemChildId);
 					const _newNode = updateJSXTextNode(_node, e.target.value);
-					const ast = getAst();
+					const ast = getASTJson();
 					set(ast, _path, _newNode);
-					updateAst?.(ast);
+					updateASTJson?.(ast);
 				}}
 			/>
 		);
@@ -107,7 +117,9 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 		<Form
 			form={form}
 			size={'small'}
+			key={forceUpdateFormId}
 			style={{ paddingRight: '24px' }}
+			initialValues={attributeValues}
 			onValuesChange={(changedValues, values) => {
 				const ob = changedValues;
 				if (Object.keys(ob).length) {
@@ -117,13 +129,13 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 					const newAst = updateAttributeValue(
 						curNode,
 						_path,
-						getAst(),
+						getASTJson(),
 						ob,
 						find ? { name: find?.name, oldValue: oldValueMap?.current?.[find.name] } : undefined
 					);
 					if (newAst) {
 						oldValueMap.current = form.getFieldsValue(true);
-						updateAst?.(newAst);
+						updateASTJson?.(newAst);
 					}
 				}
 			}}

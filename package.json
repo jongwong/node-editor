@@ -23,7 +23,7 @@
 	"lint-staged": {
 		"src/**/*.{js,jsx,ts,tsx,json}": [
 			"prettier --write",
-			"eslint"
+			"eslint --fix"
 		],
 		"src/**/*.{css,less}": [
 			"prettier --write"
@@ -47,6 +47,7 @@
 		"color": "^4.2.3",
 		"deep-equal": "^2.2.1",
 		"esbuild-wasm": "^0.18.17",
+		"eventemitter2": "^6.4.9",
 		"jotai": "^2.10.1",
 		"lodash": "^4.17.21",
 		"mitt": "^3.0.1",

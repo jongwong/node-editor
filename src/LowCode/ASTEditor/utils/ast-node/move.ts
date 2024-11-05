@@ -23,11 +23,11 @@ import {
 	wrapperJSXElement,
 } from '@/LowCode/ASTEditor/utils/ast-node/index';
 
-export const onItemDrop = ({ item, getNodeById, containerId, containerParentId }, cb) => {
-	const moveNode = getNodeById(item.uuid);
+export const onItemDropASTHandle = ({ item, getNodeById, container }, cb) => {
+	const moveNode = getNodeById(item.id);
 	let moveParentNode = getNodeById(item.parentId);
-	const targetNode = getNodeById(containerId);
-	let targetParentNode = getNodeById(containerParentId);
+	const targetNode = getNodeById(container.id);
+	let targetParentNode = getNodeById(container.parentId);
 	const curIndex = getIndexByParent(moveParentNode, moveNode);
 	const targetIndex = getIndexByParent(targetParentNode, targetNode);
 
@@ -35,7 +35,7 @@ export const onItemDrop = ({ item, getNodeById, containerId, containerParentId }
 		throw Error('找不到targetParentNode或moveParentNode');
 	}
 
-	if (item.parentId === containerParentId) {
+	if (item.parentId === container.parentId) {
 		moveParentNode.children[curIndex] = targetNode;
 		moveParentNode.children[targetIndex] = moveNode;
 		moveParentNode = resetFlatChildrenItemRemark(moveParentNode);

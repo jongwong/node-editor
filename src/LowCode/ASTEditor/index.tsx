@@ -79,7 +79,7 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 	const monacoRef = useRef<typeof monaco>();
 	const [transformCode] = useTransformCode();
 	const [astJson] = useASTJson();
-	const { transform, ready } = useLowCodeInstance();
+	const { transform } = useLowCodeInstance();
 
 	const lastDecorationsRef = useRef<string[]>();
 
@@ -148,16 +148,16 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 	const setTransformModelCode = (codeStr: string) =>
 		updateCodeToMonaco(`${modalPath}/Transform.tsx`, codeStr || '', newEditRef.current);
 	useEffect(() => {
-		if (code && modalRef.current && !initCodeRef.current) {
-			initCodeRef.current = true;
-			const m = modalRef.current;
-			if (!m || code !== m?.getValue()) {
-				m?.setValue(code);
-			}
-		}
+		// if (code && modalRef.current && !initCodeRef.current) {
+		// 	initCodeRef.current = true;
+		// 	const m = modalRef.current;
+		// 	if (!m || code !== m?.getValue()) {
+		// 		m?.setValue(code);
+		// 	}
+		// }
 		// 初始化code
 		transform(code);
-	}, [code]);
+	}, []);
 	const [searchNodeStr, setSearchNodeStr] = useState('');
 
 	const clearMark = () => {

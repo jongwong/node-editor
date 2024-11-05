@@ -14,7 +14,11 @@ import {
 	getNodeUIDPathMap,
 	prettierFormat,
 } from '@/LowCode/ASTEditor/utils';
-import { findNodeByUid, getJSXElementName } from '@/LowCode/ASTEditor/utils/ast-node';
+import {
+	findNodeByUid,
+	findNodePathLocationByUid,
+	getJSXElementName,
+} from '@/LowCode/ASTEditor/utils/ast-node';
 import { initHoverEvent } from '@/LowCode/ASTEditor/utils/dom';
 
 // 创建 Jotai 原子状态
@@ -25,20 +29,14 @@ const hoverItemIdMapAtom = atom({});
 const transformCodeAtom = atom('');
 const dataRefTimeAtom = atom('');
 
-// Create a context for the data instance
-const DataContext = createContext<{
-	ready: boolean;
-	getDataInstance: () => Partial<InstanceReturnType>;
-}>({
-	ready: false,
+const globalInstance: { getDataInstance: () => Partial<InstanceReturnType> } = {
 	getDataInstance: () => ({}),
-});
+};
+
 // 实例返回类型定义
 type InstanceReturnType = {
 	currentItemId: string | undefined;
-	getAttributeValues: () => Record<string, any>;
 	getNodeById: (id: string) => any | undefined;
-	onComponentDoubleClick: () => void;
 	getPathKeyById: (id: string) => string | undefined;
 	getNonePathIdMap: () => any;
 	getPathById: (id: string) => NodePath | undefined;
@@ -46,7 +44,9 @@ type InstanceReturnType = {
 	ast: any;
 	AstJson: any;
 	getASTJson: () => any;
+	updateASTJson: (e: any) => void;
 	transform: () => string;
+	getMaterialStore: () => any;
 	transformCode?: string;
 	currentItemChildId?: string;
 };
@@ -74,8 +74,7 @@ const LowCodeContextDataProvider = ({
 		updateNonePathIdMap(e);
 		_setAstJson(e);
 	};
-	// 使用引用保存属性值和节点路径映射
-	const curAttributeValuesRef = useRef({});
+
 	const nonePathIdMap = useRef({});
 	const { run: debounceReload } = useDebounceFn(() => reloadHover(), { wait: 500, leading: false });
 	const [transformCode, setTransformCode] = useAtom(transformCodeAtom);
@@ -94,30 +93,22 @@ const LowCodeContextDataProvider = ({
 	}, [astJson]);
 
 	// 更新 AST 状态并格式化代码
-	const changeAst = newAst => {
+	const changeAst = (newAst: any) => {
 		const formattedCode = generateCode(cloneDeep(newAst), transformCode);
 		const prettifiedCode = prettierFormat(formattedCode.code);
-
 		setAstJson(newAst);
 		setTransformCode(prettifiedCode);
 		onCodeChange?.(prettifiedCode);
 	};
 	const getDataInstance = () => ({
-		getASTJson: () => astJsonRef.current,
-		getAttributeValues: () => curAttributeValuesRef.current,
-		getNonePathIdMap: () => nonePathIdMap?.current,
-		updateAst: changeAst,
-		onComponentDoubleClick: (_props, curData) => {
-			const { _low_code_id, _low_code_child_id, children } = _props;
-			const name = getJSXElementName(curData);
-			const _config = materialStore.data?.find(it => it.name === name);
-			const _attributeValue = omit({ ...children.props }, ['children']);
-
-			curAttributeValuesRef.current = _attributeValue;
-			setCurrentItemId(_low_code_id);
-			setCurrentItemChildId(_low_code_child_id);
+		getASTJson: () => {
+			return astJsonRef.current;
 		},
+		getNonePathIdMap: () => nonePathIdMap?.current,
+		updateASTJson: changeAst,
 	});
+	// @ts-ignore
+	globalInstance.getDataInstance = getDataInstance;
 
 	// 重新加载 hover 事件
 	const reloadHover = () => {
@@ -129,11 +120,7 @@ const LowCodeContextDataProvider = ({
 		initHoverEvent(preElement);
 	};
 	useParentIframeMessage(getDataInstance);
-	return (
-		<DataContext.Provider value={{ ready: true, getDataInstance: getDataInstance as any }}>
-			{children}
-		</DataContext.Provider>
-	);
+	return <>{children}</>;
 };
 
 // 自定义钩子，从 useLowCodeContext 获取实例
@@ -143,7 +130,7 @@ export const useLowCodeInstance: () => InstanceReturnType = () => {
 	const currentItemChildId = useAtomValue(currentItemChildIdAtom);
 	const transformCode = useAtomValue(transformCodeAtom);
 	// 从 useLowCodeContext 获取实例
-	const { getDataInstance } = useContext(DataContext);
+	const getDataInstance = globalInstance.getDataInstance;
 	// 根据 ID 获取路径键
 	const getPathKeyById = (id: string) => {
 		const instance = getDataInstance();
@@ -153,7 +140,7 @@ export const useLowCodeInstance: () => InstanceReturnType = () => {
 		if (find) {
 			return find;
 		}
-		return findNodeByUid(instance?.getASTJson?.(), id);
+		return findNodePathLocationByUid(instance?.getASTJson?.(), id);
 	};
 
 	const setAstJson = useSetAtom(astJsonAtom);
@@ -174,10 +161,6 @@ export const useLowCodeInstance: () => InstanceReturnType = () => {
 	return {
 		currentItemId,
 		transform: transform,
-		getAttributeValues: () => {
-			const instance = getDataInstance();
-			return instance?.getAttributeValues?.();
-		},
 		currentItemChildId,
 		ast: astJson,
 		AstJson: astJson,
@@ -194,6 +177,7 @@ export const useLowCodeInstance: () => InstanceReturnType = () => {
 			const instance = getDataInstance();
 			const _path = getPathKeyById(id);
 			const ast = instance?.getASTJson?.();
+
 			return get(ast, _path);
 		},
 		getNonePathIdMap: () => {
@@ -201,11 +185,10 @@ export const useLowCodeInstance: () => InstanceReturnType = () => {
 			return instance?.getNonePathIdMap?.();
 		},
 		getPathKeyById,
-		onComponentDoubleClick: () => {
+		updateASTJson: (ast: any) => {
 			const instance = getDataInstance();
-			return instance?.onComponentDoubleClick;
+			return instance?.updateASTJson?.(ast);
 		},
-		// updateAst: instance?.updateAst,
 		transformCode,
 	};
 };

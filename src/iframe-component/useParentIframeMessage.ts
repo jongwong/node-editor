@@ -1,20 +1,31 @@
 import { useEffect, useRef } from 'react';
 
-import { pick } from 'lodash';
+import { omit, pick } from 'lodash';
 
 import { LowCodeMessageEvent } from '@/constant/message-event';
+import { useCurrentItemChildId, useCurrentItemId } from '@/iframe-component/useIframeInstance';
 import { postMessageToChild, wrapperMessage } from '@/iframe-component/utils';
 import {
 	useDataRefTimeAtom,
 	useLowCodeInstance,
 } from '@/LowCode/ASTEditor/ASTExplorer/useLowCodeContext';
+import { onItemDropASTHandle } from '@/LowCode/ASTEditor/utils/ast-node/move';
+import emitter from '@/utils/event';
 
 function useParentIframeMessage(getInstanceData: () => any) {
-	const { currentItemId, currentItemChildId, AstJson, transformCode, getASTJson } =
-		useLowCodeInstance();
+	const {
+		currentItemId,
+		currentItemChildId,
+		getASTJson,
+		updateASTJson,
+		AstJson,
+		getNodeById,
+		transformCode,
+	} = useLowCodeInstance();
 	const [dataRefTime] = useDataRefTimeAtom();
 	const readyRef = useRef(false);
-
+	const [_, setCurrentItemId] = useCurrentItemId();
+	const [_currentItemChildId, setCurrentItemChildId] = useCurrentItemChildId();
 	const postCurrentItemId = () => {
 		postMessageToChild(LowCodeMessageEvent.CurrentItemId, currentItemId);
 	};
@@ -55,18 +66,44 @@ function useParentIframeMessage(getInstanceData: () => any) {
 
 			// Ensure message is from the correct source
 			if (app !== 'lowcode') return;
-			if (type === LowCodeMessageEvent.IframeReady) {
-				readyRef.current = true;
 
-				postInstanceData();
+			switch (type) {
+				case LowCodeMessageEvent.IframeReady:
+					readyRef.current = true;
+					postInstanceData();
 
-				postTransformCode();
-				postAstJson();
+					postTransformCode();
+					postAstJson();
 
-				setTimeout(() => {
-					postCurrentItemId();
-					postCurrentItemChildId();
-				}, 30);
+					setTimeout(() => {
+						postCurrentItemId();
+						postCurrentItemChildId();
+					}, 30);
+					break;
+				case LowCodeMessageEvent.OnItemDrop:
+					onItemDropASTHandle?.(
+						{
+							item: payload.item,
+							container: payload.container,
+							getNodeById,
+						},
+						() => {
+							const astJson = getASTJson();
+							updateASTJson(astJson);
+						}
+					);
+					break;
+
+				case LowCodeMessageEvent.LowCodeDragItemDoubleClick:
+					// eslint-disable-next-line no-case-declarations
+					const { _low_code_id, _low_code_child_id } = payload.item;
+					emitter.emit(LowCodeMessageEvent.AttributeValueChange, payload.attributeValue);
+
+					setCurrentItemId(_low_code_id);
+					setCurrentItemChildId(_low_code_child_id);
+					break;
+				default:
+					break;
 			}
 		}
 		window.addEventListener('message', handleMessage);

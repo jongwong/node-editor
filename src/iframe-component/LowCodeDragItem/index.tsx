@@ -2,9 +2,11 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 
 import classNames from 'classnames';
+import { omit } from 'lodash';
 
 import { LowCodeMessageEvent } from '@/constant/message-event';
 import useIframeInstance, {
+	onItemDrop,
 	useASTJson,
 	useCurrentItemId,
 } from '@/iframe-component/useIframeInstance';
@@ -32,7 +34,7 @@ type LowCodeDragItemProps = {
 
 const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 	// eslint-disable-next-line react/prop-types
-	const { _low_code_child_id, _low_code_id, _low_code_parent_id, ...rest } = props;
+	const { children, _low_code_child_id, _low_code_id, _low_code_parent_id, ...rest } = props;
 
 	const currentItemId = useCurrentItemId();
 	const ASTJson = useASTJson();
@@ -57,14 +59,16 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 				if (el) {
 					const containerId = el.getAttribute('_low_code_id');
 					const containerParentId = el.getAttribute('_low_code_parent_id');
-
-					// onItemDrop(
-					// 	{ item, getNodeById, containerId, containerParentId },
-					// 	(moveParentNode, targetParentNode) => {
-					// 		const astJson = getAst();
-					// 		updateAst?.(astJson);
-					// 	}
-					// );
+					onItemDrop({
+						item: {
+							id: _low_code_id,
+							parentId: _low_code_parent_id,
+						},
+						container: {
+							id: containerId as string,
+							parentId: containerParentId as string,
+						},
+					});
 				}
 				setTimeout(() => {
 					removeClassName(document.body, 'low-code-container__dragging');
@@ -84,8 +88,10 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 
 	// Handler for double-click event
 	const handleDoubleClick = e => {
+		const _attributeValue = omit({ ...props?.children?.props }, ['children']);
 		postMessageToParent(LowCodeMessageEvent.LowCodeDragItemDoubleClick, {
-			props,
+			item: omit(props, 'children'),
+			attributeValue: _attributeValue,
 		});
 
 		e.stopPropagation();
@@ -95,6 +101,7 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 	if (!isIframe()) {
 		return props.children;
 	}
+
 	return (
 		<div
 			className={classNames(
@@ -135,10 +142,12 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 				e.stopPropagation();
 			}}
 		>
-			<span className={'low-code-target-item__menu'}>
-				<span>{name}</span>
-			</span>
-			<ErrorBound>{props.children}</ErrorBound>
+			{name ? (
+				<span className={'low-code-target-item__menu'}>
+					<span>{name}</span>
+				</span>
+			) : null}
+			<ErrorBound>{children}</ErrorBound>
 		</div>
 	);
 };

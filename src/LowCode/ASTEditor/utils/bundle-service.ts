@@ -2,7 +2,6 @@ export const ServerUrl = 'http://localhost:3000';
 
 export const bundleFiles = async files => {
 	const data = files?.map(it => ({ ...it, filename: it.filename })); // 请求体数据，可以根据需要调整
-
 	try {
 		// 发送 POST 请求
 		const response = await fetch(ServerUrl + '/api/files', {

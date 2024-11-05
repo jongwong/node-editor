@@ -11,7 +11,7 @@ import {
 	postMessageToParent,
 	wrapperMessage,
 } from '@/iframe-component/utils';
-import { findNodeByUid, findNodePathLocationByUid } from '@/LowCode/ASTEditor/utils/ast-node';
+import { findNodePathLocationByUid } from '@/LowCode/ASTEditor/utils/ast-node';
 
 // Define atoms to hold the received state values
 export const currentItemIdAtom = atom('');
@@ -111,6 +111,13 @@ export const useASTJson = () => {
 export const useCurrentItemId = () => {
 	return useAtom(currentItemIdAtom);
 };
-export const useCurrentItemChild = () => {
+export const useCurrentItemChildId = () => {
 	return useAtom(currentItemChildIdAtom);
+};
+
+export const onItemDrop = (op: {
+	item: { id: string; parentId: string };
+	container: { id: string; parentId: string };
+}) => {
+	postMessageToParent(LowCodeMessageEvent.OnItemDrop, op);
 };
