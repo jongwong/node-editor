@@ -5,7 +5,6 @@ import * as path from 'path';
 
 const { ModuleFederationPlugin } = require('@module-federation/enhanced/rspack');
 const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
-const { middlewaresInit } = require('./server/middlewares');
 
 const isDev = process.env.NODE_ENV === 'development';
 // Target browsers, see: https://github.com/browserslist/browserslist
@@ -106,6 +105,7 @@ export default defineConfig({
 		new rspack.HtmlRspackPlugin({
 			template: './public/index.html',
 		}),
+
 		new ProvidePlugin({
 			process: [require.resolve('process/browser')],
 			Buffer: ['buffer', 'Buffer'],
@@ -113,19 +113,6 @@ export default defineConfig({
 		new MonacoWebpackPlugin({
 			languages: ['typescript', 'javascript', 'json'],
 			globalAPI: true,
-		}),
-		new ModuleFederationPlugin({
-			name: 'adminApp',
-			filename: 'remoteEntry.js', // Entry file to expose
-			exposes: {
-				// './ASTExplorer': 'src/ASTEditor/ASTExplorer',
-				// './LowCodeDragItem': 'src/ASTEditor/component/LowCodeDragItem',
-				// './LowCodeItemContainer': 'src/ASTEditor/component/LowCodeItemContainer',
-			},
-			shared: {
-				react: { singleton: true, eager: true, requiredVersion: false },
-				'react-dom': { singleton: true, eager: true, requiredVersion: false },
-			},
 		}),
 		isDev ? new RefreshPlugin() : null,
 	].filter(Boolean),
@@ -141,22 +128,19 @@ export default defineConfig({
 		port: 3000,
 		hot: true,
 		liveReload: true,
-		proxy: {
-			// Proxy all requests starting with `/api` to `http://localhost:5000`
-			'/server': {
+		proxy: [
+			{
+				context: ['/preview'], // 代理路径
 				target: 'http://localhost:3001',
-				changeOrigin: true, // Changes the origin of the host header to the target URL
-				pathRewrite: { '^/server': '' }, // Remove `/api` prefix when forwarding
+				changeOrigin: true, // 修改请求头中的 Origin
 			},
-		},
-		setupMiddlewares: (middlewares, devServer) => {
-			if (!devServer) {
-				throw new Error('@rspack/dev-server is not defined');
-			}
-
-			middlewaresInit(devServer.app);
-
-			return middlewares;
-		},
+			{
+				context: ['/api'], // 代理路径
+				target: 'http://localhost:3001',
+				changeOrigin: true, // 修改请求头中的 Origin
+				pathRewrite: { '^/api': '' }, // 重写路径，将 `/api` 替换为空字符串
+			},
+		],
+		historyApiFallback: true,
 	},
 });

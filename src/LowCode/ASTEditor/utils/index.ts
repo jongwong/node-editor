@@ -176,7 +176,9 @@ const addItemRemark = (path: any, reset?: boolean) => {
 		materialStore.data.some(configIt => {
 			return name === configIt.name;
 		});
-
+	console.log('=====isValidText=====', isValidText);
+	console.log('=====_node=====', path.node);
+	console.log('=====_node?.value=====', path.node?.value);
 	const attributeConfig = {
 		_low_code_child_id: cUid,
 		_low_code_parent_id: pUid,
@@ -292,7 +294,7 @@ const isEmptyTextText = _node => {
 	return _node && _node?.type === 'JSXText' && !_node?.value?.trim();
 };
 const isFullTextText = _node => {
-	return _node && _node?.type === 'JSXText' && _node?.value?.trim();
+	return _node && _node?.type === 'JSXText' && !!_node?.value?.trim();
 };
 
 export const reInsertContainer = node => {
