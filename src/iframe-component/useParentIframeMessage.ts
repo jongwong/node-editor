@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { omit, pick } from 'lodash';
 
 import { LowCodeMessageEvent } from '@/constant/message-event';
+import useOpenAttribute from '@/iframe-component/handle/useOpenAttribute';
 import { useCurrentItemChildId, useCurrentItemId } from '@/iframe-component/useIframeInstance';
 import { postMessageToChild, wrapperMessage } from '@/iframe-component/utils';
 import {
@@ -26,6 +27,7 @@ function useParentIframeMessage(getInstanceData: () => any) {
 	const readyRef = useRef(false);
 	const [_, setCurrentItemId] = useCurrentItemId();
 	const [_currentItemChildId, setCurrentItemChildId] = useCurrentItemChildId();
+	const openAttributeHandle = useOpenAttribute();
 	const postCurrentItemId = () => {
 		postMessageToChild(LowCodeMessageEvent.CurrentItemId, currentItemId);
 	};
@@ -95,13 +97,12 @@ function useParentIframeMessage(getInstanceData: () => any) {
 					break;
 
 				case LowCodeMessageEvent.LowCodeDragItemDoubleClick:
-					// eslint-disable-next-line no-case-declarations
-					const { _low_code_id, _low_code_child_id } = payload.item;
-					emitter.emit(LowCodeMessageEvent.AttributeValueChange, payload.attributeValue);
-
-					setCurrentItemId(_low_code_id);
-					setCurrentItemChildId(_low_code_child_id);
+					openAttributeHandle(payload.item, payload.attributeValue);
 					break;
+				case LowCodeMessageEvent.SendAttributeValue:
+					openAttributeHandle(payload.item, payload.attributeValue);
+					break;
+
 				default:
 					break;
 			}
@@ -149,4 +150,8 @@ function useParentIframeMessage(getInstanceData: () => any) {
 export default useParentIframeMessage;
 export const postDraggingStateChange = (e: boolean) => {
 	postMessageToChild(LowCodeMessageEvent.DraggingStateChange, e);
+};
+
+export const postAskAttributeValue = (e: any) => {
+	postMessageToChild(LowCodeMessageEvent.AskAttributeValue, e);
 };

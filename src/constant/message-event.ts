@@ -1,4 +1,5 @@
 import { onItemDrop } from '@/iframe-component/useIframeInstance';
+import { postAskAttributeValue } from '@/iframe-component/useParentIframeMessage';
 
 export enum LowCodeMessageEvent {
 	LowCodeDragItemDoubleClick = 'LowCodeDragItemDoubleClick',
@@ -11,4 +12,6 @@ export enum LowCodeMessageEvent {
 	IframeReady = 'IframeReady',
 	OnItemDrop = 'OnItemDrop',
 	DraggingStateChange = 'DraggingStateChange',
+	AskAttributeValue = 'AskAttributeValue',
+	SendAttributeValue = 'SendAttributeValue',
 }

@@ -16,11 +16,11 @@ const PreviewLayout: React.FC<{ Component: React.FC }> = ({ Component }) => {
 	const { onRef } = useContainerListen();
 	return (
 		<div ref={onRef} style={{ border: '24px solid #eee', background: 'eee' }}>
-			<IframeListenProvider>
-				<DndProvider backend={HTML5Backend} context={window}>
+			<DndProvider backend={HTML5Backend} context={window}>
+				<IframeListenProvider>
 					<Component />
-				</DndProvider>
-			</IframeListenProvider>
+				</IframeListenProvider>
+			</DndProvider>
 		</div>
 	);
 };

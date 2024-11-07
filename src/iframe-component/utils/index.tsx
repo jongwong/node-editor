@@ -1,3 +1,5 @@
+import React from 'react';
+
 import { LowCodeMessageEvent } from '@/constant/message-event';
 
 export const hasDraggingElement = () => {
@@ -73,3 +75,43 @@ export const postMessageToChild = (type: LowCodeMessageEvent, payload: any) => {
 };
 
 export const isIframe = () => window.top !== self || window.opener;
+
+export function findFirstElementByLowCodeId(node: any, targetId: string) {
+	// Check if the node is a React element
+	if (React.isValidElement(node)) {
+		// Check if the element has _low_code_id property and matches targetId
+		if (node?.props?._low_code_id === targetId) {
+			return node; // Return immediately upon finding the first match
+		}
+
+		// Recursively search children if they exist
+		let found = null;
+		React.Children.forEach(node?.props?.children, child => {
+			if (!found) {
+				// Only search further if we haven't found a match
+				found = findFirstElementByLowCodeId(child, targetId);
+			}
+		});
+
+		return found;
+	}
+
+	return null;
+}
+export const getMessageReactProps = cfg => {
+	const ob = {};
+	Object.keys(cfg).forEach(it => {
+		const _val = cfg[it];
+		let isValid = false;
+		try {
+			JSON.stringify(_val);
+			isValid = true;
+		} catch (e) {
+			isValid = false;
+		}
+		if (isValid && it !== 'children') {
+			ob[it] = _val;
+		}
+	});
+	return ob;
+};

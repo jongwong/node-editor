@@ -5,12 +5,18 @@ import classNames from 'classnames';
 import { isString, omit } from 'lodash';
 
 import { LowCodeMessageEvent } from '@/constant/message-event';
+import emmiter from '@/iframe-component/emmiter';
 import useIframeInstance, {
 	onItemDrop,
 	useASTJson,
 	useCurrentItemId,
 } from '@/iframe-component/useIframeInstance';
-import { isIframe, postMessageToParent, wrapperMessage } from '@/iframe-component/utils';
+import {
+	getMessageReactProps,
+	isIframe,
+	postMessageToParent,
+	wrapperMessage,
+} from '@/iframe-component/utils';
 import { EDragItemType, EOperationClassName } from '@/LowCode/ASTEditor/constants';
 import { renderNodeName } from '@/LowCode/ASTEditor/utils/ast-node';
 import { hasDraggingElement } from '@/LowCode/ASTEditor/utils/dom';
@@ -35,7 +41,6 @@ type LowCodeDragItemProps = {
 const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 	// eslint-disable-next-line react/prop-types
 	const { children, _low_code_child_id, _low_code_id, _low_code_parent_id, ...rest } = props;
-
 	const currentItemId = useCurrentItemId();
 	const ASTJson = useASTJson();
 	const { getNodeById } = useIframeInstance();
@@ -90,7 +95,7 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 	const handleDoubleClick = e => {
 		const _attributeValue = omit({ ...props?.children?.props }, ['children']);
 		postMessageToParent(LowCodeMessageEvent.LowCodeDragItemDoubleClick, {
-			item: omit(props, 'children'),
+			item: getMessageReactProps(props),
 			attributeValue: _attributeValue,
 		});
 
@@ -102,6 +107,12 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 		return props.children;
 	}
 
+	useEffect(() => {
+		emmiter.emit('item-children-change', {
+			item: { _low_code_child_id, _low_code_id, _low_code_parent_id },
+			children: children,
+		});
+	}, [children]);
 	return (
 		<div
 			className={classNames(

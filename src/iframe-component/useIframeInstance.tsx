@@ -1,16 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import { atom, useAtomValue, useSetAtom } from 'jotai';
 import { useAtom } from 'jotai/index';
-import { before, get } from 'lodash';
+import { get } from 'lodash';
 
 import { LowCodeMessageEvent } from '@/constant/message-event';
-import {
-	getBaseUrl,
-	isIframe,
-	postMessageToParent,
-	wrapperMessage,
-} from '@/iframe-component/utils';
+import emmiter from '@/iframe-component/emmiter';
+import { getMessageReactProps, isIframe, postMessageToParent } from '@/iframe-component/utils';
 import { findNodePathLocationByUid } from '@/LowCode/ASTEditor/utils/ast-node';
 import {
 	addClassName,
@@ -31,10 +27,18 @@ export const IframeListenProvider: React.FC<{ children: React.ReactNode }> = ({ 
 	const setAstJson = useSetAtom(astJsonAtom);
 	const transformCode = useAtomValue(transformCodeAtom);
 
+	const childMapMap = useRef({});
 	const postReadyMessage = () => {
 		postMessageToParent(LowCodeMessageEvent.IframeReady, true);
 	};
+	const postPropsChangeMessage = e => {
+		postMessageToParent(LowCodeMessageEvent.SendAttributeValue, e);
+	};
 	useEffect(() => {
+		emmiter.on('item-children-change', e => {
+			childMapMap.current[e.item._low_code_child_id] = e;
+		});
+
 		function handleMessage(e: any) {
 			const { app, type, payload } = e.data;
 
@@ -56,6 +60,22 @@ export const IframeListenProvider: React.FC<{ children: React.ReactNode }> = ({ 
 					break;
 				case LowCodeMessageEvent.LowcodeInstanceData:
 					window.lowcodeInstanceData = payload;
+					break;
+				case LowCodeMessageEvent.AskAttributeValue:
+					// eslint-disable-next-line no-case-declarations
+					const find = childMapMap.current[payload._low_code_child_id];
+
+					if (find) {
+						const isEl = React.isValidElement(find?.children) && find?.children?.props;
+
+						const val = {
+							item: payload,
+							type: isEl ? 'ReactNode' : 'Other',
+							attributeValue: isEl ? getMessageReactProps(find?.children?.props) : find.children,
+						};
+						postPropsChangeMessage(val);
+					}
+
 					break;
 				case LowCodeMessageEvent.DraggingStateChange:
 					if (payload) {

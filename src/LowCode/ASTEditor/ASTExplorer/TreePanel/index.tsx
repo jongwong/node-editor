@@ -1,9 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import traverse from '@babel/traverse';
 import { Tree } from '@minoru/react-dnd-treeview';
 import uuid from 'uuid';
 
+import { LowCodeMessageEvent } from '@/constant/message-event';
+import useOpenAttribute from '@/iframe-component/handle/useOpenAttribute';
 import { useLowCodeInstance } from '@/LowCode/ASTEditor/ASTExplorer/useLowCodeContext';
 import {
 	ensureProgramAst,
@@ -11,6 +13,7 @@ import {
 	getJSXElementName,
 	renderNodeName,
 } from '@/LowCode/ASTEditor/utils/ast-node';
+import emitter from '@/utils/event';
 
 // @ts-ignore
 import './index.less';
@@ -40,19 +43,32 @@ const buildTreeFromFlat = (dataArray: NodeData[]): TreeNode[] => {
 	const idToNodeMap = new Map<string, TreeNode>(); // 用于存储每个节点及其子节点
 	const rootNodes: TreeNode[] = []; // 用于存储树的根节点
 	const map = {};
+	const notLeafOb = {};
 	dataArray.forEach(data => {
 		map[data._low_code_id] = true;
 	});
 	// 1. 初始化每个节点并存入 Map
-	return dataArray.map(data => {
+	const list = dataArray.map(data => {
 		const currentNode: TreeNode = {
 			id: data._low_code_id,
 			text: data.componentName,
 			data,
-			parent: data?.parentId && map[data?.parentId] ? data?.parentId : undefined,
 		};
+		if (data?.parentId && map[data?.parentId]) {
+			currentNode.parent = data?.parentId;
+			notLeafOb[data?.parentId] = true;
+		} else {
+			currentNode.parent = 0;
+		}
 		// idToNodeMap.set(data._low_code_id, currentNode);
 		return currentNode;
+	});
+
+	return list.map(it => {
+		return {
+			...it,
+			isLeaf: !notLeafOb[it?.id],
+		};
 	});
 };
 const isDescendantOf = (childLocation: string, parentLocation: string): boolean => {
@@ -121,51 +137,29 @@ const buildTree = (ast: any): TreeNode[] => {
 };
 
 const TreePanel: React.FC = props => {
-	const [treeData, setTreeData] = useState([
-		{
-			id: 1,
-			parent: 0,
-			droppable: true,
-			text: 'Folder 1',
-		},
-		{
-			id: 2,
-			parent: 1,
-			text: 'File 1-1',
-		},
-		{
-			id: 3,
-			parent: 1,
-			text: 'File 1-2',
-		},
-		{
-			id: 4,
-			parent: 0,
-			droppable: true,
-			text: 'Folder 2',
-		},
-		{
-			id: 5,
-			parent: 4,
-			droppable: true,
-			text: 'Folder 2-1',
-		},
-		{
-			id: 6,
-			parent: 5,
-			text: 'File 2-1-1',
-		},
-	]);
+	const [treeData, setTreeData] = useState([]);
 	const handleDrop = newTreeData => setTreeData(newTreeData);
-
+	const { AstJson, currentItemId, transformCode, getNodeById } = useLowCodeInstance();
+	const openAttributeHandle = useOpenAttribute();
+	useEffect(() => {
+		const li = buildTree(AstJson);
+		setTreeData(li);
+	}, [AstJson, currentItemId]);
 	return (
 		<Tree
 			tree={treeData}
-			rootId={0}
 			onDrop={handleDrop}
 			render={(node, { depth, isOpen, onToggle }) => (
-				<div style={{ marginLeft: depth * 10 }}>
-					{node.droppable && <span onClick={onToggle}>{isOpen ? '[-]' : '[+]'}</span>}
+				<div
+					style={{ marginLeft: depth * 10 }}
+					onClick={e => {
+						openAttributeHandle({
+							_low_code_id: node.data._low_code_id,
+							_low_code_child_id: node.data._low_code_child_id,
+						});
+					}}
+				>
+					{!node?.isLeaf && <span onClick={onToggle}>{isOpen ? '[-]' : '[+]'}</span>}
 					{node.text}
 				</div>
 			)}
@@ -176,6 +170,7 @@ const TreePanel: React.FC = props => {
 					return true;
 				}
 			}}
+			rootId={0}
 			dragPreviewRender={monitorProps => <CustomDragPreview monitorProps={monitorProps} />}
 			dropTargetOffset={10}
 			placeholderRender={(node, { depth }) => <Placeholder node={node} depth={depth} />}
@@ -200,7 +195,6 @@ export const Placeholder: React.FC<any> = props => {
 	);
 };
 const CustomDragPreview: React.FC<any> = props => {
-	console.log('=====props=====', props);
 	const item = props.node;
 
 	return <div style={{}}>{item?.text}</div>;
