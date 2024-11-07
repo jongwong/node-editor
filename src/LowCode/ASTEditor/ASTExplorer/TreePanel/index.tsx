@@ -1,17 +1,20 @@
 import React, { useMemo, useState } from 'react';
-import { useDrag, useDrop } from 'react-dnd';
 
 import traverse from '@babel/traverse';
-import { Tree } from 'antd';
+import { Tree } from '@minoru/react-dnd-treeview';
+import uuid from 'uuid';
 
 import { useLowCodeInstance } from '@/LowCode/ASTEditor/ASTExplorer/useLowCodeContext';
-import { isLowCodeElement } from '@/LowCode/ASTEditor/utils';
 import {
 	ensureProgramAst,
 	getAttributeValue,
 	getJSXElementName,
 	renderNodeName,
 } from '@/LowCode/ASTEditor/utils/ast-node';
+
+// @ts-ignore
+import './index.less';
+import 'react-arborist/src/';
 
 const ItemTypes = {
 	TreeNode: 'TreeNode',
@@ -21,39 +24,36 @@ interface NodeData {
 	_low_code_id: string;
 	_low_code_parent_id: string;
 	_low_code_child_id?: string;
-	component: string;
+	componentName: string;
+	location: string;
+	parentId: string;
 }
 interface TreeNode {
 	data: NodeData;
 	children: TreeNode[];
+	id: string;
+	parent: string;
+	text: string;
 }
 // 将平铺的 NodeData[] 转换为树形结构
 const buildTreeFromFlat = (dataArray: NodeData[]): TreeNode[] => {
 	const idToNodeMap = new Map<string, TreeNode>(); // 用于存储每个节点及其子节点
 	const rootNodes: TreeNode[] = []; // 用于存储树的根节点
-
+	const map = {};
+	dataArray.forEach(data => {
+		map[data._low_code_id] = true;
+	});
 	// 1. 初始化每个节点并存入 Map
-	dataArray.forEach(data => {
-		const currentNode: TreeNode = { data, children: [] };
-		idToNodeMap.set(data._low_code_id, currentNode);
+	return dataArray.map(data => {
+		const currentNode: TreeNode = {
+			id: data._low_code_id,
+			text: data.componentName,
+			data,
+			parent: data?.parentId && map[data?.parentId] ? data?.parentId : undefined,
+		};
+		// idToNodeMap.set(data._low_code_id, currentNode);
+		return currentNode;
 	});
-	// 2. 根据 parentId 连接子节点
-	dataArray.forEach(data => {
-		const currentNode = idToNodeMap.get(data._low_code_id);
-		if (!currentNode) {
-			return;
-		}
-		const parentNode = data?.parentId ? idToNodeMap.get(data.parentId) : undefined;
-		// 如果当前节点有父节点 (parentId), 将其添加到父节点的子节点列表中
-		if (parentNode) {
-			parentNode.children.push(currentNode);
-		} else {
-			// 如果当前节点没有父节点 (即是根节点), 添加到根节点列表
-			rootNodes.push(currentNode);
-		}
-	});
-
-	return rootNodes; // 返回根节点列表
 };
 const isDescendantOf = (childLocation: string, parentLocation: string): boolean => {
 	// 判断 childLocation 是否是 parentLocation 的后代
@@ -100,7 +100,7 @@ const buildTree = (ast: any): TreeNode[] => {
 					_low_code_id: getAttributeValue(_el, '_low_code_id'),
 					_low_code_parent_id: getAttributeValue(_el, '_low_code_parent_id'),
 					_low_code_child_id: getAttributeValue(_el, '_low_code_child_id'),
-					component: getJSXElementName(path.node),
+					componentName: getJSXElementName(path.node.children[0]) || 'Text',
 					location: path.getPathLocation(), // 记录节点位置
 				};
 
@@ -120,78 +120,88 @@ const buildTree = (ast: any): TreeNode[] => {
 	return buildTreeFromFlat(result);
 };
 
-const DraggableNode = ({ node, getNodeById, handleNodeDrop }: any) => {
-	const astNodeId = node.data?._low_code_child_id || node.data?._low_code_parent_id;
-
-	const [{ isDragging }, dragRef] = useDrag({
-		type: ItemTypes.TreeNode,
-		item: { id: astNodeId },
-		collect: monitor => ({
-			isDragging: monitor.isDragging(),
-		}),
-	});
-	const [hoverPosition, setHoverPosition] = useState<null | string>(null);
-	const [, dropRef] = useDrop({
-		accept: [ItemTypes.TreeNode],
-		drop: (item, monitor) => {
-			const targetNodeId = astNodeId;
-			const sourceNodeId = item.id;
-
-			// Handle drop logic here, such as rearranging tree structure
-			handleNodeDrop(sourceNodeId, targetNodeId);
-		},
-		hover: (item, monitor) => {
-			const hoverBoundingRect = monitor.getClientOffset(); // 获取当前鼠标位置
-			const nodeElement = document.getElementById(astNodeId); // 获取当前节点的 DOM 元素
-			if (!nodeElement || !hoverBoundingRect) return;
-
-			const { top, bottom, height } = nodeElement.getBoundingClientRect();
-			const hoverMiddleY = (bottom - top) / 2;
-			const hoverPositionY = hoverBoundingRect.y - top;
-
-			if (hoverPositionY < hoverMiddleY / 2) {
-				setHoverPosition(DropPosition.ABOVE);
-			} else if (hoverPositionY < hoverMiddleY) {
-				setHoverPosition(DropPosition.INSIDE);
-			} else {
-				setHoverPosition(DropPosition.BELOW);
-			}
-		},
-	});
-
-	const astNode = getNodeById(astNodeId);
-
-	return (
-		<div
-			id={astNodeId}
-			ref={node => dragRef(dropRef(node))}
-			style={{ opacity: isDragging ? 0.5 : 1 }}
-		>
-			{/* 渲染插槽提示 */}
-			{hoverPosition === DropPosition.ABOVE && <div className="drop-slot">插槽：上方</div>}
-			{renderNodeName(astNode)}
-			{hoverPosition === DropPosition.BELOW && <div className="drop-slot">插槽：下方</div>}
-		</div>
-	);
-};
-
 const TreePanel: React.FC = props => {
-	const { ...rest } = props;
-	const { ast, currentItemId, transformCode, getNodeById } = useLowCodeInstance();
-	const treeData = useMemo(() => {
-		return buildTree(ast);
-	}, [ast, currentItemId]);
+	const [treeData, setTreeData] = useState([
+		{
+			id: 1,
+			parent: 0,
+			droppable: true,
+			text: 'Folder 1',
+		},
+		{
+			id: 2,
+			parent: 1,
+			text: 'File 1-1',
+		},
+		{
+			id: 3,
+			parent: 1,
+			text: 'File 1-2',
+		},
+		{
+			id: 4,
+			parent: 0,
+			droppable: true,
+			text: 'Folder 2',
+		},
+		{
+			id: 5,
+			parent: 4,
+			droppable: true,
+			text: 'Folder 2-1',
+		},
+		{
+			id: 6,
+			parent: 5,
+			text: 'File 2-1-1',
+		},
+	]);
+	const handleDrop = newTreeData => setTreeData(newTreeData);
 
 	return (
-		<div>
-			<Tree
-				treeData={treeData}
-				defaultExpandAll
-				defaultExpandParent
-				autoExpandParent
-				titleRender={node => renderNodeName(getNodeById(node.data?._low_code_child_id))}
-			></Tree>
-		</div>
+		<Tree
+			tree={treeData}
+			rootId={0}
+			onDrop={handleDrop}
+			render={(node, { depth, isOpen, onToggle }) => (
+				<div style={{ marginLeft: depth * 10 }}>
+					{node.droppable && <span onClick={onToggle}>{isOpen ? '[-]' : '[+]'}</span>}
+					{node.text}
+				</div>
+			)}
+			sort={false}
+			insertDroppableFirst={false}
+			canDrop={(tree, { dragSource, dropTargetId }) => {
+				if (dragSource?.parent === dropTargetId) {
+					return true;
+				}
+			}}
+			dragPreviewRender={monitorProps => <CustomDragPreview monitorProps={monitorProps} />}
+			dropTargetOffset={10}
+			placeholderRender={(node, { depth }) => <Placeholder node={node} depth={depth} />}
+		/>
 	);
 };
 export default TreePanel;
+export const Placeholder: React.FC<any> = props => {
+	const left = props.depth * 24;
+	return (
+		<div
+			style={{
+				// backgroundColor: '#1967d2',
+				// height: '2px',
+				// position: 'absolute',
+				// right: 0,
+				// transform: 'translateY(-50%)',
+				// top: 0,
+				left,
+			}}
+		></div>
+	);
+};
+const CustomDragPreview: React.FC<any> = props => {
+	console.log('=====props=====', props);
+	const item = props.node;
+
+	return <div style={{}}>{item?.text}</div>;
+};

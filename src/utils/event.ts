@@ -1,9 +1,4 @@
-import { EventEmitter2 } from 'eventemitter2';
+import mitt from 'mitt';
 
-// Initialize an instance of EventEmitter2
-const emitter = new EventEmitter2({
-	wildcard: true, // Enables wildcard support
-	delimiter: '.', // Sets delimiter for event namespaces (e.g., 'event.subevent')
-	maxListeners: 15, // Optional: Set the max number of listeners
-});
+const emitter = mitt();
 export default emitter;

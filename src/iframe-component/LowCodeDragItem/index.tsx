@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 
 import classNames from 'classnames';
-import { omit } from 'lodash';
+import { isString, omit } from 'lodash';
 
 import { LowCodeMessageEvent } from '@/constant/message-event';
 import useIframeInstance, {
@@ -147,7 +147,7 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 					<span>{name}</span>
 				</span>
 			) : null}
-			<ErrorBound>{children}</ErrorBound>
+			<ErrorBound>{isString(children) ? <span>{children}</span> : children}</ErrorBound>
 		</div>
 	);
 };
