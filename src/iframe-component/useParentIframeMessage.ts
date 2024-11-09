@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import { omit, pick } from 'lodash';
+import { get, omit, pick } from 'lodash';
 
 import { LowCodeMessageEvent } from '@/constant/message-event';
 import useOpenAttribute from '@/iframe-component/handle/useOpenAttribute';
@@ -38,31 +38,14 @@ function useParentIframeMessage(getInstanceData: () => any) {
 		postMessageToChild(LowCodeMessageEvent.TransformCode, transformCode);
 	};
 	const postAstJson = () => {
-		postMessageToChild(LowCodeMessageEvent.AstJson, transformCode);
+		postMessageToChild(LowCodeMessageEvent.AstJson, getASTJson());
 	};
 	const ins = getInstanceData();
 
-	const postInstanceData = () => {
-		const ob = ins?.getNonePathIdMap();
-		const newOb: any = {};
-		Object.keys(ob).forEach(it => {
-			newOb[it] = pick(
-				{
-					...ob[it],
-				},
-				['pathKey', 'name']
-			);
-		});
-		const val = {
-			nonePathIdMap: newOb,
-			ASTJson: ins?.getASTJson(),
-		};
-		postMessageToChild(LowCodeMessageEvent.LowcodeInstanceData, val);
-	};
 	useEffect(() => {
-		if (readyRef.current) {
-			postInstanceData();
-		}
+		postInstanceData();
+	}, [transformCode]);
+	useEffect(() => {
 		function handleMessage(e: any) {
 			const { app, type, payload } = e.data;
 
@@ -111,7 +94,7 @@ function useParentIframeMessage(getInstanceData: () => any) {
 
 		// Cleanup event listener on component unmount
 		return () => window.removeEventListener('message', handleMessage);
-	}, [currentItemId, AstJson, transformCode, dataRefTime]);
+	}, [currentItemId, AstJson, transformCode, currentItemId]);
 
 	// Send currentItemId updates
 	useEffect(() => {
@@ -154,4 +137,27 @@ export const postDraggingStateChange = (e: boolean) => {
 
 export const postAskAttributeValue = (e: any) => {
 	postMessageToChild(LowCodeMessageEvent.AskAttributeValue, e);
+};
+export const postInstanceData = (ast, ob = {}) => {
+	if (!Object.keys(ob).length) {
+		return;
+	}
+	const newOb: any = {};
+
+	let xx = '';
+	Object.keys(ob).forEach(it => {
+		xx = it;
+		newOb[it] = pick(
+			{
+				...ob[it],
+			},
+			['pathKey', 'name']
+		);
+	});
+
+	const val = {
+		nonePathIdMap: newOb,
+		ASTJson: ast,
+	};
+	postMessageToChild(LowCodeMessageEvent.LowcodeInstanceData, val);
 };

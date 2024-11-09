@@ -6,7 +6,9 @@ import { atom, useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { cloneDeep, get, omit } from 'lodash';
 import uuid from 'uuid';
 
-import useParentIframeMessage from '@/iframe-component/useParentIframeMessage';
+import useParentIframeMessage, {
+	postInstanceData,
+} from '@/iframe-component/useParentIframeMessage';
 import materialStore from '@/LowCode/ASTEditor/ASTExplorer/material-store';
 import {
 	addEditMark,
@@ -45,7 +47,6 @@ type InstanceReturnType = {
 	AstJson: any;
 	getASTJson: () => any;
 	updateASTJson: (e: any) => void;
-	transform: () => string;
 	getMaterialStore: () => any;
 	transformCode?: string;
 	currentItemChildId?: string;
@@ -56,10 +57,12 @@ const LowCodeContextDataProvider = ({
 	preElement,
 	onCodeChange,
 	children,
+	actionRef,
 }: {
 	onCodeChange: any;
 	preElement: any;
 	children?: React.ReactNode;
+	actionRef?: (e: any) => void;
 }): JSX.Element => {
 	// 使用 Jotai 状态
 	const setCurrentItemId = useSetAtom(currentItemIdAtom);
@@ -68,12 +71,13 @@ const LowCodeContextDataProvider = ({
 	const astJson = useAtomValue(astJsonAtom);
 	const setHoverItemMap = useSetAtom(hoverItemIdMapAtom);
 	const astJsonRef = useRef<any>();
-	const [dataRefTime, setDataRefTime] = useAtom(dataRefTimeAtom);
 	const setAstJson = (e: any) => {
 		astJsonRef.current = e;
+
 		updateNonePathIdMap(e);
 		_setAstJson(e);
 	};
+	const initedRef = useRef(false);
 
 	const nonePathIdMap = useRef({});
 	const { run: debounceReload } = useDebounceFn(() => reloadHover(), { wait: 500, leading: false });
@@ -81,16 +85,8 @@ const LowCodeContextDataProvider = ({
 
 	const updateNonePathIdMap = (e: any) => {
 		nonePathIdMap.current = getNodeUIDPathMap(e);
-		setDataRefTime(uuid());
+		postInstanceData(e, nonePathIdMap.current);
 	};
-	useEffect(() => {
-		if (!Object.keys(astJsonRef.current || {}).length) {
-			astJsonRef.current = astJson;
-		}
-		if (!Object.keys(nonePathIdMap.current || {}).length) {
-			updateNonePathIdMap(astJson);
-		}
-	}, [astJson]);
 
 	// 更新 AST 状态并格式化代码
 	const changeAst = (newAst: any) => {
@@ -104,12 +100,27 @@ const LowCodeContextDataProvider = ({
 		getASTJson: () => {
 			return astJsonRef.current;
 		},
-		getNonePathIdMap: () => nonePathIdMap?.current,
+		getNonePathIdMap: () => {
+			return nonePathIdMap?.current;
+		},
 		updateASTJson: changeAst,
 	});
 	// @ts-ignore
 	globalInstance.getDataInstance = getDataInstance;
 
+	actionRef?.({
+		initCode: (code: string) => {
+			initedRef.current = true;
+			const { outputCode, ast } = addEditMark(code);
+			setTimeout(() => {
+				setAstJson(ast);
+				setTransformCode(outputCode);
+				setCurrentItemId(undefined);
+				setCurrentItemChildId(undefined);
+			}, 300);
+		},
+		hasInit: () => initedRef.current,
+	});
 	// 重新加载 hover 事件
 	const reloadHover = () => {
 		if (!preElement) return;
@@ -143,24 +154,8 @@ export const useLowCodeInstance: () => InstanceReturnType = () => {
 		return findNodePathLocationByUid(instance?.getASTJson?.(), id);
 	};
 
-	const setAstJson = useSetAtom(astJsonAtom);
-	const setCurrentItemId = useSetAtom(currentItemIdAtom);
-	const setCurrentItemChildId = useSetAtom(currentItemChildIdAtom);
-	const setTransformCode = useSetAtom(transformCodeAtom);
-	// 转换并格式化代码
-	const transform = (code: string) => {
-		const { outputCode, ast } = addEditMark(code);
-		setAstJson(ast);
-		setCurrentItemId(undefined);
-		setCurrentItemChildId(undefined);
-		// curAttributeValuesRef.current = {};
-		setTransformCode(outputCode);
-		return outputCode;
-	};
-
 	return {
 		currentItemId,
-		transform: transform,
 		currentItemChildId,
 		ast: astJson,
 		AstJson: astJson,

@@ -361,15 +361,21 @@ export const logAstJsxIndex = (ast: any, name: string, index = 0, removeRemark?:
 };
 
 export const ensureProgramAst = (ast: any) => {
-	if (ast?.type === 'Program' || ast?.type === 'File') {
+	if (ast?.type === 'File') {
 		return ast; // 如果已经是 Program，直接返回
 	}
 
 	// 否则，我们将其包裹在 Program 中
 	return {
-		type: 'Program',
-		body: [ast], // 把原来的 AST 放在 body 数组中
-		sourceType: 'module', // 可以根据需要设置为 'module' 或 'script'
+		type: 'File',
+		program:
+			ast?.type !== 'Program'
+				? {
+						type: 'Program',
+						body: [ast], // 把原来的 AST 放在 body 数组中
+						sourceType: 'module', // 可以根据需要设置为 'module' 或 'script'
+				  }
+				: ast,
 	};
 };
 // 更新并返回新的 JSXText 节点

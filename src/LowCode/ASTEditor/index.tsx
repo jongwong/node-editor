@@ -82,8 +82,8 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 	const monacoRef = useRef<typeof monaco>();
 	const [transformCode] = useTransformCode();
 	const [astJson] = useASTJson();
-	const { transform } = useLowCodeInstance();
 
+	const lowcodeDataActionRef = useRef();
 	const lastDecorationsRef = useRef<string[]>();
 
 	const { run: showKeyMark } = useDebounceFn(
@@ -151,16 +151,10 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 	const setTransformModelCode = (codeStr: string) =>
 		updateCodeToMonaco(`${modalPath}/Transform.tsx`, codeStr || '', newEditRef.current);
 	useEffect(() => {
-		// if (code && modalRef.current && !initCodeRef.current) {
-		// 	initCodeRef.current = true;
-		// 	const m = modalRef.current;
-		// 	if (!m || code !== m?.getValue()) {
-		// 		m?.setValue(code);
-		// 	}
-		// }
-		// 初始化code
-		transform(code);
-	}, []);
+		if (lowcodeDataActionRef.current?.hasInit && !lowcodeDataActionRef.current?.hasInit()) {
+			lowcodeDataActionRef.current?.initCode?.(code);
+		}
+	}, [lowcodeDataActionRef.current]);
 	const [searchNodeStr, setSearchNodeStr] = useState('');
 
 	const clearMark = () => {
@@ -193,31 +187,6 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 			keysList.some(it => take(it, cloneKeys.length).join('__') === cloneKeys.join('__'))
 		);
 	};
-
-	const [cursorSelectionRangeKeyList, setCursorSelectionRangeKeyList] = useState([]);
-	const { run: onCursorSelection } = useDebounceFn(
-		e => {
-			const _cursorSelectionLoc = pick(e, [
-				'startColumn',
-				'endColumn',
-				'startLineNumber',
-				'endLineNumber',
-			]);
-			if (
-				_cursorSelectionLoc.startLineNumber === _cursorSelectionLoc.endLineNumber &&
-				_cursorSelectionLoc.startColumn === _cursorSelectionLoc.endColumn
-			) {
-				setCursorSelectionRangeKeyList([]);
-				return;
-			}
-			const list = findKeyListByLoc(_cursorSelectionLoc, getASTJson());
-			setCursorSelectionRangeKeyList(list);
-			setTimeout(() => {
-				scrollToMarkJsonNode();
-			}, 300);
-		},
-		{ wait: 300 }
-	);
 
 	const renderVerticalText = (text: string) => {
 		return (
@@ -284,12 +253,7 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 												}}
 											/>
 											<JSONTree
-												data={getFormatAstJson(
-													astJson,
-													cursorSelectionRangeKeyList?.length
-														? cursorSelectionRangeKeyList
-														: searchKeysList
-												)}
+												data={getFormatAstJson(astJson, searchKeysList)}
 												theme={astViewTheme}
 												hideRoot
 												shouldExpandNodeInitially={(keyPath, data, level) => level <= 5}
@@ -304,9 +268,7 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 															}}
 															className={classNames(
 																_isSearch && 'json-tree-find-active',
-																!_isSearch &&
-																	checkKeyList(keyPath, cursorSelectionRangeKeyList) &&
-																	'json-preview-is-include-selection'
+																!_isSearch && 'json-preview-is-include-selection'
 															)}
 															onDoubleClick={() => {
 																const val = get(astJson, cloneDeep(keyPath).reverse());
@@ -369,6 +331,7 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 				onCodeChange={e => {
 					setCode(e);
 				}}
+				actionRef={e => (lowcodeDataActionRef.current = e)}
 				preElement={previewElRef.current}
 			>
 				<DndProvider backend={HTML5Backend} context={window}>

@@ -41,10 +41,9 @@ type LowCodeDragItemProps = {
 const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 	// eslint-disable-next-line react/prop-types
 	const { children, _low_code_child_id, _low_code_id, _low_code_parent_id, ...rest } = props;
-	const currentItemId = useCurrentItemId();
-	const ASTJson = useASTJson();
+	const [currentItemId] = useCurrentItemId();
+	const [ASTJson] = useASTJson();
 	const { getNodeById } = useIframeInstance();
-
 	const curData = getNodeById(_low_code_id);
 	const childNode = getNodeById(_low_code_child_id);
 

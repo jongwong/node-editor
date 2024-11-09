@@ -59,6 +59,7 @@ export const IframeListenProvider: React.FC<{ children: React.ReactNode }> = ({ 
 					setAstJson(payload);
 					break;
 				case LowCodeMessageEvent.LowcodeInstanceData:
+					setAstJson(payload.ASTJson);
 					window.lowcodeInstanceData = payload;
 					break;
 				case LowCodeMessageEvent.AskAttributeValue:
@@ -121,7 +122,6 @@ const useIframeInstance = () => {
 		getNodeById: (id: string) => {
 			const insData = getInsData();
 			const _path = getPathKeyById(id);
-
 			const ast = insData?.ASTJson || {};
 			return get(ast, _path);
 		},

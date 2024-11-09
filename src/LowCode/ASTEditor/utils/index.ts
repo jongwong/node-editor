@@ -76,7 +76,7 @@ export const generateCode = (ast, code = '') => {
 
 export const getNodeUIDPathMap = ast => {
 	const ob = {};
-	if (ast?.type !== 'Program') {
+	if (ast?.type !== 'File') {
 		return {}; // 如果已经是 Program，直接返回
 	}
 
