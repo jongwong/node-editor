@@ -62,6 +62,7 @@
 		"react-json-tree": "^0.18.0",
 		"react-router": "^5.3.4",
 		"react-router-config": "^5.1.1",
+		"react-split-pane": "^0.1.92",
 		"uuid": "^3.3.3",
 		"webpack-dev-middleware": "^7.4.2",
 		"xterm": "^5.2.1"

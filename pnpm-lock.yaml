@@ -111,6 +111,7 @@ specifiers:
   react-router-config: ^5.1.1
   react-router-dom: ^5.3.4
   react-scripts: 5.0.1
+  react-split-pane: ^0.1.92
   style-loader: ^3.3.3
   terser-webpack-plugin: ^5.1.4
   thread-loader: ^4.0.1
@@ -169,6 +170,7 @@ dependencies:
   react-json-tree: 0.18.0_gq4reeurwxuj4hvyerswzzqthy
   react-router: 5.3.4_react@18.2.0
   react-router-config: 5.1.1_rlw3ibuvnpt5jvejeevjcf4ije
+  react-split-pane: 0.1.92_biqbaboplfbrettd7655fr4n2y
   uuid: 3.4.0
   webpack-dev-middleware: 7.4.2_webpack@5.88.2
   xterm: 5.2.1
@@ -14498,6 +14500,10 @@ packages:
       react-base16-styling: 0.9.1
     dev: false
 
+  /react-lifecycles-compat/3.0.4:
+    resolution: {integrity: sha512-fBASbA6LnOU9dOU2eW7aQ8xmYBSXUIWr+UmF9b1efZBazGNO+rcXT/icdKnYm2pTwcRylVUYwW7H1PHfLekVzA==}
+    dev: false
+
   /react-monaco-editor/0.52.0_h657qdzcjcnz2blclmt7rnpycu:
     resolution: {integrity: sha512-jhQSekf2JABbcpN45gKZlWfTS0QcBOZAbAWKGyfqy/KEcMXTwJpCOYGcn2Ur11SUUxWJUzhKjE2fx9BGBc5S8g==}
     peerDependencies:
@@ -14657,6 +14663,25 @@ packages:
       - webpack-cli
       - webpack-hot-middleware
       - webpack-plugin-serve
+
+  /react-split-pane/0.1.92_biqbaboplfbrettd7655fr4n2y:
+    resolution: {integrity: sha512-GfXP1xSzLMcLJI5BM36Vh7GgZBpy+U/X0no+VM3fxayv+p1Jly5HpMofZJraeaMl73b3hvlr+N9zJKvLB/uz9w==}
+    peerDependencies:
+      react: ^16.0.0-0
+      react-dom: ^16.0.0-0
+    dependencies:
+      prop-types: 15.8.1
+      react: 18.2.0
+      react-dom: 18.2.0_react@18.2.0
+      react-lifecycles-compat: 3.0.4
+      react-style-proptype: 3.2.2
+    dev: false
+
+  /react-style-proptype/3.2.2:
+    resolution: {integrity: sha512-ywYLSjNkxKHiZOqNlso9PZByNEY+FTyh3C+7uuziK0xFXu9xzdyfHwg4S9iyiRRoPCR4k2LqaBBsWVmSBwCWYQ==}
+    dependencies:
+      prop-types: 15.8.1
+    dev: false
 
   /react-use-measure/2.1.1_biqbaboplfbrettd7655fr4n2y:
     resolution: {integrity: sha512-nocZhN26cproIiIduswYpV5y5lQpSQS1y/4KuvUCjSKmw7ZWIS/+g3aFnX3WdBkyuGUtTLif3UTqnLLhbDoQig==}

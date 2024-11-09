@@ -118,7 +118,6 @@ const AttributePanel: React.FC<AttributePanelProps> = props => {
 			form={form}
 			size={'small'}
 			key={forceUpdateFormId}
-			style={{ paddingRight: '24px' }}
 			initialValues={attributeValues}
 			onValuesChange={(changedValues, values) => {
 				const ob = changedValues;

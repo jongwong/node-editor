@@ -3,7 +3,9 @@
 	border-radius: 4px;
 	overflow: hidden;
 	font-family: sans-serif;
-
+	.yo-tabs-tab-btn {
+		text-align: center;
+	}
 	.yo-tabs-tabpane-hidden {
 		display: none;
 	}
@@ -70,6 +72,31 @@
 		}
 	}
 
+	&-left {
+		flex-direction: row-reverse;
+
+		.yo-tabs-content-left {
+			height: 100%;
+		}
+		.yo-tabs-tabpane {
+			height: 100%;
+		}
+		.yo-tabs-nav {
+			flex-direction: column;
+			width: 24px;
+		}
+
+		.yo-tabs-tab {
+			padding: 8px 0px;
+			font-size: 14px;
+		}
+		.yo-tabs-content-holder {
+			flex: 1 1 auto;
+		}
+
+		.yo-tabs-tab-active {
+		}
+	}
 	/* 右侧标签布局样式 */
 	&-right {
 		flex-direction: row;

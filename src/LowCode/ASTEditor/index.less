@@ -1,18 +1,33 @@
+@bg-color: #eee;
+
 .monaco-find-ast-remark {
 	background: rgba(252, 159, 159, 0.53);
 }
 .json-tree-find-active {
 	background-color: rgba(181, 213, 251, 0.71);
 }
-.other-panel {
-	//overflow-x: hidden;
-	//display: none !important;
-}
-.right-panel {
-	display: grid;
-	height: 100%;
-	overflow-y: auto;
-}
+
 .json-preview-is-include-selection {
 	background-color: rgba(181, 213, 251, 0.71);
+}
+
+.transparent-bg-panel {
+	background-image: linear-gradient(45deg, #ccc 25%, transparent 25%),
+		linear-gradient(-45deg, #ccc 25%, transparent 25%),
+		linear-gradient(45deg, transparent 75%, #ccc 75%),
+		linear-gradient(-45deg, transparent 75%, #ccc 75%);
+	background-size: 20px 20px;
+	background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+}
+
+.main-panel {
+	box-sizing: border-box;
+	width: 100%;
+	height: 100%;
+
+	& > iframe {
+		width: 100%;
+		height: 100%;
+		border: none;
+	}
 }

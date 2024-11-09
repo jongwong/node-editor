@@ -15,7 +15,7 @@ const PreviewLayout: React.FC<{ Component: React.FC }> = ({ Component }) => {
 	const curRef = useRef<HTMLDivElement>();
 	const { onRef } = useContainerListen();
 	return (
-		<div ref={onRef} style={{ border: '24px solid #eee', background: 'eee' }}>
+		<div ref={onRef} style={{ margin: 24, background: '#fff' }}>
 			<DndProvider backend={HTML5Backend} context={window}>
 				<IframeListenProvider>
 					<Component />

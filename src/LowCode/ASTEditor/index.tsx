@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { DndProvider, useDragLayer } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { JSONTree } from 'react-json-tree';
+import SplitPane from 'react-split-pane';
 
 import { MinusOutlined } from '@ant-design/icons';
 import Editor from '@monaco-editor/react';
@@ -38,6 +39,7 @@ import useLowCodeContext, {
 } from '@/LowCode/ASTEditor/ASTExplorer/useLowCodeContext';
 import LowCodeContextDataProvider from '@/LowCode/ASTEditor/ASTExplorer/useLowCodeContext';
 import rawCode from '@/LowCode/ASTEditor/raw-code';
+import SplitLayout from '@/LowCode/ASTEditor/SplitLayout';
 import {
 	addEditMark,
 	formattedJson,
@@ -74,7 +76,6 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 	const getASTJson = () => astJsonRef.current;
 	const [showDebugPanel, setShowDebugPanel] = useState(false);
 
-	const [bottomActiveKey, setBottomActiveKey] = useState(null);
 	const initCodeRef = useRef(false);
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor>();
 	const newEditRef = useRef<monaco.editor.IStandaloneCodeEditor>();
@@ -242,6 +243,126 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 			]);
 		}
 	}, [transformCode]);
+	const renderDebugCode = () => {
+		return (
+			<>
+				{showDebugPanel ? (
+					<div
+						style={{
+							position: 'absolute',
+							left: 0,
+							right: 0,
+							top: 0,
+							bottom: 0,
+							zIndex: 10,
+							background: 'white',
+						}}
+					>
+						<Tabs
+							destroyInactiveTabPane
+							items={[
+								{
+									key: 'ast-json',
+									label: 'ast-json',
+									children: (
+										<Editor
+											language={'json'}
+											options={options}
+											value={formattedJson(JSON.stringify(astJson) || '{}')}
+										/>
+									),
+								},
+								{
+									key: 'ast',
+									label: 'ast',
+									children: (
+										<div style={{ height: '95vh', overflow: 'auto' }}>
+											<Input
+												value={searchNodeStr}
+												onChange={e => {
+													setSearchNodeStr(e.target.value);
+												}}
+											/>
+											<JSONTree
+												data={getFormatAstJson(
+													astJson,
+													cursorSelectionRangeKeyList?.length
+														? cursorSelectionRangeKeyList
+														: searchKeysList
+												)}
+												theme={astViewTheme}
+												hideRoot
+												shouldExpandNodeInitially={(keyPath, data, level) => level <= 5}
+												labelRenderer={(keyPath: any) => {
+													const label = `"${keyPath[0]}"`;
+
+													const _isSearch = checkKeyList(keyPath, searchKeysList);
+													return (
+														<div
+															onMouseLeave={() => {
+																clearMark();
+															}}
+															className={classNames(
+																_isSearch && 'json-tree-find-active',
+																!_isSearch &&
+																	checkKeyList(keyPath, cursorSelectionRangeKeyList) &&
+																	'json-preview-is-include-selection'
+															)}
+															onDoubleClick={() => {
+																const val = get(astJson, cloneDeep(keyPath).reverse());
+															}}
+															onMouseEnter={() => {
+																showKeyMark(cloneDeep(keyPath) as any);
+															}}
+														>
+															{label}
+														</div>
+													);
+												}}
+											/>
+										</div>
+									),
+								},
+								{
+									key: 'code',
+									label: 'code',
+									children: (
+										<div style={{ overflow: 'scroll' }}>
+											<Input.TextArea value={transformCode} autoSize />
+										</div>
+									),
+								},
+								{
+									key: 'rawCode',
+									label: 'rawCode',
+									children: (
+										<div style={{ overflow: 'scroll' }}>
+											<Input.TextArea
+												value={generateCode(removeEditMarkAst(astJson)).code}
+												autoSize
+											/>
+										</div>
+									),
+								},
+							]}
+							onChange={e => {
+								clearMark();
+								if (e !== 'ast') {
+									setTimeout(() => {
+										setTransformModelCode(code);
+									}, 100);
+								}
+							}}
+						/>
+					</div>
+				) : null}
+				<FloatButton
+					icon={<span>B</span>}
+					onClick={() => setShowDebugPanel(!showDebugPanel)}
+				></FloatButton>
+			</>
+		);
+	};
 	return (
 		<div>
 			<LowCodeContextDataProvider
@@ -251,243 +372,59 @@ const Index: React.FC<{ children?: React.ReactNode }> = props => {
 				preElement={previewElRef.current}
 			>
 				<DndProvider backend={HTML5Backend} context={window}>
-					<div
-						style={{
-							display: 'grid',
-							height: '100vh',
-							gridTemplateRows: !bottomActiveKey ? 'auto 24px' : 'auto 300px',
-						}}
+					<SplitLayout
+						bottomTabsItems={[
+							{
+								key: 'material',
+								label: '组件',
+								children: <MaterialPanel />,
+							},
+							{
+								key: 'code',
+								label: '代码',
+								children: (
+									<div className={'h-1-1'} style={{ overflow: 'hidden' }}>
+										<Editor
+											width="100%"
+											language="typescript"
+											options={options}
+											path={`${modalPath}/origin.tsx`}
+											defaultLanguage={'typescript'}
+											value={code}
+											onMount={(_edit, m) => {
+												editorRef.current = _edit;
+												monacoRef.current = m;
+												initOtherConfig(m);
+											}}
+											onChange={e => {
+												transform(e || '');
+											}}
+										/>
+									</div>
+								),
+							},
+						]}
+						leftTabsItems={[
+							{
+								key: 'Project',
+								label: renderVerticalText('Project'),
+								children: <TreePanel />,
+							},
+						]}
+						rightTabsItems={[
+							{
+								key: 'attribute',
+								label: '属性',
+								children: <AttributePanel code={transformCode} />,
+							},
+						]}
 					>
-						<div
-							style={{
-								display: 'grid',
-								gridTemplateColumns: '250px  auto 300px',
-							}}
-						>
-							<div>
-								<Tabs
-									direction={'rtl'}
-									className={'h-1-1'}
-									tabPosition={'right'}
-									items={[
-										{
-											key: 'key',
-											label: renderVerticalText('Project'),
-											children: <TreePanel />,
-										},
-									]}
-								/>
-							</div>
-							<div
-								className={'other-panel'}
-								ref={previewElRef as any}
-								style={{ marginTop: '50px' }}
-							>
-								<iframe
-									src={ServerUrl + '/preview'}
-									id={'lowcode-preview'}
-									width={'100%'}
-									height={'100%'}
-									style={{ border: 'none' }}
-								/>
-							</div>
-							<div
-								className="right-panel other-panel"
-								onMouseLeave={() => {
-									clearMark();
-								}}
-							>
-								<Tabs
-									destroyInactiveTabPane
-									className={'h-1-1'}
-									items={[
-										{
-											key: 'attribute',
-											label: '属性',
-											children: (
-												<div style={{ overflow: 'scroll', height: '100%' }}>
-													<AttributePanel code={transformCode} />
-												</div>
-											),
-										},
-									]}
-								></Tabs>
-							</div>
+						<div className={'main-panel transparent-bg-panel'} ref={previewElRef as any}>
+							<iframe src={ServerUrl + '/preview'} id={'lowcode-preview'} />
 						</div>
-						<div>
-							<Tabs
-								destroyInactiveTabPane
-								tabBarExtraContent={
-									bottomActiveKey ? (
-										<span style={{ padding: '2px 8px' }}>
-											<MinusOutlined
-												onClick={e => {
-													setBottomActiveKey(null);
-												}}
-											/>
-										</span>
-									) : null
-								}
-								className={'h-1-1'}
-								items={[
-									{
-										key: 'material',
-										label: 'material',
-										children: <MaterialPanel />,
-									},
-									{
-										key: 'code',
-										label: '代码',
-										children: (
-											<div className={'h-1-1'} style={{ overflow: 'hidden' }}>
-												<Editor
-													width="100%"
-													language="typescript"
-													options={options}
-													path={`${modalPath}/origin.tsx`}
-													defaultLanguage={'typescript'}
-													value={code}
-													onMount={(_edit, m) => {
-														editorRef.current = _edit;
-														monacoRef.current = m;
-														initOtherConfig(m);
-													}}
-													onChange={e => {
-														transform(e || '');
-													}}
-												/>
-											</div>
-										),
-									},
-								]}
-								activeKey={bottomActiveKey}
-								onChange={e => {
-									setBottomActiveKey(e);
-									if (e === 'code') {
-										setTimeout(() => {
-											setModelCode(code);
-										}, 300);
-									}
-								}}
-							></Tabs>
-						</div>
-					</div>
-					{showDebugPanel ? (
-						<div
-							style={{
-								position: 'absolute',
-								left: 0,
-								right: 0,
-								top: 0,
-								bottom: 0,
-								zIndex: 10,
-								background: 'white',
-							}}
-						>
-							<Tabs
-								destroyInactiveTabPane
-								size={'small'}
-								items={[
-									{
-										key: 'ast-json',
-										label: 'ast-json',
-										children: (
-											<Editor
-												language={'json'}
-												options={options}
-												value={formattedJson(JSON.stringify(astJson) || '{}')}
-											/>
-										),
-									},
-									{
-										key: 'ast',
-										label: 'ast',
-										children: (
-											<div style={{ height: '95vh', overflow: 'auto' }}>
-												<Input
-													value={searchNodeStr}
-													onChange={e => {
-														setSearchNodeStr(e.target.value);
-													}}
-												/>
-												<JSONTree
-													data={getFormatAstJson(
-														astJson,
-														cursorSelectionRangeKeyList?.length
-															? cursorSelectionRangeKeyList
-															: searchKeysList
-													)}
-													theme={astViewTheme}
-													hideRoot
-													shouldExpandNodeInitially={(keyPath, data, level) => level <= 5}
-													labelRenderer={(keyPath: any) => {
-														const label = `"${keyPath[0]}"`;
-
-														const _isSearch = checkKeyList(keyPath, searchKeysList);
-														return (
-															<div
-																onMouseLeave={() => {
-																	clearMark();
-																}}
-																className={classNames(
-																	_isSearch && 'json-tree-find-active',
-																	!_isSearch &&
-																		checkKeyList(keyPath, cursorSelectionRangeKeyList) &&
-																		'json-preview-is-include-selection'
-																)}
-																onDoubleClick={() => {
-																	const val = get(astJson, cloneDeep(keyPath).reverse());
-																}}
-																onMouseEnter={() => {
-																	showKeyMark(cloneDeep(keyPath) as any);
-																}}
-															>
-																{label}
-															</div>
-														);
-													}}
-												/>
-											</div>
-										),
-									},
-									{
-										key: 'code',
-										label: 'code',
-										children: (
-											<div style={{ overflow: 'scroll' }}>
-												<Input.TextArea value={transformCode} autoSize />
-											</div>
-										),
-									},
-									{
-										key: 'rawCode',
-										label: 'rawCode',
-										children: (
-											<div style={{ overflow: 'scroll' }}>
-												<Input.TextArea
-													value={generateCode(removeEditMarkAst(astJson)).code}
-													autoSize
-												/>
-											</div>
-										),
-									},
-								]}
-								onChange={e => {
-									clearMark();
-									if (e !== 'ast') {
-										setTimeout(() => {
-											setTransformModelCode(code);
-										}, 100);
-									}
-								}}
-							/>
-						</div>
-					) : null}
-					<FloatButton
-						icon={<span>B</span>}
-						onClick={() => setShowDebugPanel(!showDebugPanel)}
-					></FloatButton>
+					</SplitLayout>
 				</DndProvider>
+				{renderDebugCode()}
 			</LowCodeContextDataProvider>
 		</div>
 	);
