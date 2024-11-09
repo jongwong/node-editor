@@ -1,0 +1,93 @@
+.yo-tabs {
+	display: flex;
+	border-radius: 4px;
+	overflow: hidden;
+	font-family: sans-serif;
+
+	.yo-tabs-tabpane-hidden {
+		display: none;
+	}
+	/* 通用的标签导航栏样式 */
+	&-nav {
+		display: flex;
+		background-color: #eee;
+		flex-shrink: 0;
+	}
+
+	/* 标签样式 */
+	&-tab {
+		padding: 8px 16px;
+		color: #333;
+		font-weight: bold;
+		cursor: pointer;
+		transition: color 0.3s;
+
+		&:hover {
+			color: #40a9ff;
+		}
+	}
+
+	&-tab-active {
+		font-weight: bold;
+		background: #fff;
+	}
+
+	/* 内容区域样式 */
+	&-tabpane {
+		padding: 16px;
+		background-color: #fff;
+		flex: 1;
+	}
+
+	&-top {
+		flex-direction: column;
+
+		.yo-tabs-nav-list,
+		.yo-tabs-nav-wrap {
+			width: 100%;
+		}
+		.yo-tabs-content,
+		.yo-tabs-tabpane {
+			height: 100%;
+		}
+		.yo-tabs-nav-list {
+			display: flex;
+			flex-direction: row;
+		}
+		.yo-tabs-nav {
+			flex: 0 0 auto;
+			height: 24px;
+		}
+		.yo-tabs-tab {
+			padding: 2px 8px;
+			font-size: 14px;
+		}
+		.yo-tabs-content-holder {
+			flex: 1 1 auto;
+		}
+
+		.yo-tabs-tab-active {
+		}
+	}
+
+	/* 右侧标签布局样式 */
+	&-right {
+		flex-direction: row;
+
+		.yo-tabs-nav {
+			flex-direction: column;
+			width: 24px;
+			line-height: 24px;
+		}
+		.yo-tabs-tab {
+			padding: 8px 0px;
+			font-size: 14px;
+		}
+		.yo-tabs-content-holder {
+			flex: 1 1 auto;
+		}
+
+		.yo-tabs-tab-active {
+		}
+	}
+}

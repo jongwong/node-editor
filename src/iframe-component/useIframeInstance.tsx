@@ -71,7 +71,7 @@ export const IframeListenProvider: React.FC<{ children: React.ReactNode }> = ({ 
 						const val = {
 							item: payload,
 							type: isEl ? 'ReactNode' : 'Other',
-							attributeValue: isEl ? getMessageReactProps(find?.children?.props) : find.children,
+							attributeValue: isEl ? getMessageReactProps(find?.children?.props) : {},
 						};
 						postPropsChangeMessage(val);
 					}

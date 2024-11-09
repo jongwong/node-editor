@@ -6,3 +6,9 @@ body {
 #webpack-dev-server-client-overlay {
 	display: none !important;
 }
+.h-1-1 {
+	height: 100%;
+}
+.w-1-1 {
+	width: 100%;
+}
