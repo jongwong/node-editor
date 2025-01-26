@@ -18,13 +18,15 @@
 		"isolatedModules": true,
 		"moduleResolution": "node",
 		"useDefineForClassFields": true,
-		"allowSyntheticDefaultImports": true
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"types": ["vite-plugin-svgr/client"]
 	},
 	"ts-node": {
 		"compilerOptions": {
 			"module": "CommonJS"
 		}
 	},
-	"include": ["./src/**/*", "./typings/**/*"],
+	"include": ["./src/**/*", "./typings/**/*", "src/global.d.ts"],
 	"exclude": ["node_modules", "dist", "build"]
 }

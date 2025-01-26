@@ -54,8 +54,15 @@ export default defineConfig({
 				use: ['file-loader'],
 			},
 			{
-				test: /\.svg$/,
-				type: 'asset',
+				test: /\.svg$/, // 匹配 SVG 文件
+				use: [
+					{
+						loader: '@svgr/webpack', // 使用 svgr 加载器
+						options: {
+							icon: true, // 将 SVG 视为图标
+						},
+					},
+				],
 			},
 			{
 				test: /\.txt$/,

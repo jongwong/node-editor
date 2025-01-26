@@ -2,6 +2,8 @@ import React from 'react';
 import { renderRoutes } from 'react-router-config';
 import { BrowserRouter } from 'react-router-dom';
 
+import { createFromIconfontCN } from '@ant-design/icons';
+
 import routes from '@/routes';
 
 import './style/normalize.css';

@@ -80,6 +80,7 @@ function useParentIframeMessage(getInstanceData: () => any) {
 					break;
 
 				case LowCodeMessageEvent.LowCodeDragItemDoubleClick:
+					console.log('=====payload=====', payload);
 					openAttributeHandle(payload.item, payload.attributeValue);
 					break;
 				case LowCodeMessageEvent.SendAttributeValue:

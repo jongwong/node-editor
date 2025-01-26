@@ -119,6 +119,7 @@ const LowCodeDragItem: React.FC<LowCodeDragItemProps> = props => {
 				isDragging && 'low-code-target-item__dragging',
 				isSelect && 'low-code-target-item__select'
 			)}
+			id={_low_code_id}
 			ref={e => {
 				elRef.current = e;
 				previewRef(e);

@@ -5,21 +5,23 @@ import monacoEditorPlugin from 'vite-plugin-monaco-editor';
 // 可选：自定义 Babel 插件
 import Buffer from 'buffer';
 import * as fs from 'fs';
-
+import svgo from 'svgo';
 import { createHtmlPlugin } from 'vite-plugin-html';
+import svgr from 'vite-plugin-svgr';
 
 function rawTxtPlugin() {
 	return {
 		name: 'vite-plugin-raw-txt',
 		transform(src, id) {
-			if (id.endsWith('.txt')) {
-				const filePath = path.resolve(id);
-				const content = fs.readFileSync(filePath, 'utf-8');
-				return {
-					code: `export default ${JSON.stringify(content)}`,
-					map: null, // 如果需要源映射，可以生成源映射
-				};
+			if (!id.endsWith('.txt')) {
+				return null;
 			}
+			const filePath = path.resolve(id);
+			const content = fs.readFileSync(filePath, 'utf-8');
+			return {
+				code: `export default ${JSON.stringify(content)}`,
+				map: null, // 如果需要源映射，可以生成源映射
+			};
 		},
 	};
 }
@@ -43,12 +45,16 @@ export default defineConfig({
 			},
 		},
 	},
-
+	assetsExclude: ['**/*.svg'],
 	plugins: [
 		react(), // 代替 ReactRefreshWebpackPlugin
+
 		monacoEditorPlugin({
 			// 代替 MonacoWebpackPlugin
 			languageWorkers: ['editorWorkerService', 'typescript'],
+		}),
+		svgr({
+			exportAsDefault: true,
 		}),
 		rawTxtPlugin(),
 		createHtmlPlugin({
@@ -59,7 +65,7 @@ export default defineConfig({
 		}),
 	],
 	resolve: {
-		extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
+		extensions: ['.ts', '.tsx', '.js', '.jsx', '.json', '.svg'],
 		alias: {
 			'@': path.resolve(__dirname, './src'),
 			'@containers': path.resolve(__dirname, './src/containers'),

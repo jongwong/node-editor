@@ -1,9 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
+import {
+	AppstoreOutlined,
+	CaretDownOutlined,
+	DeploymentUnitOutlined,
+	DownOutlined,
+	FolderOutlined,
+	RightOutlined,
+} from '@ant-design/icons';
 import traverse from '@babel/traverse';
 import { Tree } from '@minoru/react-dnd-treeview';
 import uuid from 'uuid';
 
+import IconFont from '@/components/IconFont';
 import { LowCodeMessageEvent } from '@/constant/message-event';
 import useOpenAttribute from '@/iframe-component/handle/useOpenAttribute';
 import { useLowCodeInstance } from '@/LowCode/ASTEditor/ASTExplorer/useLowCodeContext';
@@ -13,7 +22,6 @@ import {
 	getJSXElementName,
 	renderNodeName,
 } from '@/LowCode/ASTEditor/utils/ast-node';
-import emitter from '@/utils/event';
 
 // @ts-ignore
 import './index.less';
@@ -138,32 +146,80 @@ const buildTree = (ast: any): TreeNode[] => {
 
 const TreePanel: React.FC = props => {
 	const [treeData, setTreeData] = useState([]);
+
+	const openAttributeHandle = useOpenAttribute();
 	const handleDrop = newTreeData => setTreeData(newTreeData);
 	const { AstJson, currentItemId, transformCode, getNodeById } = useLowCodeInstance();
-	const openAttributeHandle = useOpenAttribute();
+
+	const [forceUpdateKey, setForceUpdateKey] = useState('');
+	const [openKeys, setOpenKeys] = useState<string[]>([]);
 	useEffect(() => {
 		const li = buildTree(AstJson);
-		setTreeData(li);
+		setOpenKeys(li?.map(it => it.id));
+		// setOpenKeys(li.map(it => it.id));
+		if (!openKeys.length) {
+			setTimeout(() => {
+				setTreeData(li);
+			}, 1000);
+		}
+		setForceUpdateKey(uuid.v4());
 	}, [AstJson, currentItemId]);
+
+	const getIconByName = (name: string, node) => {
+		const _name = name.toLowerCase();
+		if (_name === 'text') {
+			const iframe = document.querySelector('#lowcode-preview') as HTMLIFrameElement;
+			const doc = iframe?.contentDocument;
+			const pEl = doc?.getElementById(node.data._low_code_id);
+			const el = pEl?.children[1];
+			const text = el?.textContent?.trim() || '';
+			return (
+				<>
+					<IconFont style={{ fontSize: 14, paddingRight: 4 }} type="yh-text-recognition" />{' '}
+					{text || _name}
+				</>
+			);
+		}
+		return (
+			<>
+				<DeploymentUnitOutlined style={{ fontSize: 14, paddingRight: 4 }} />
+				{name}
+			</>
+		);
+	};
 	return (
 		<Tree
 			tree={treeData}
 			onDrop={handleDrop}
+			key={forceUpdateKey}
 			render={(node, { depth, isOpen, onToggle }) => (
 				<div
-					style={{ marginLeft: depth * 10 }}
-					onClick={e => {
-						openAttributeHandle({
-							_low_code_id: node.data._low_code_id,
-							_low_code_child_id: node.data._low_code_child_id,
-						});
+					style={{ marginLeft: depth * 16 }}
+					onDoubleClick={e => {
+						const data = node?.data || {};
+						openAttributeHandle(
+							{
+								_low_code_id: data?._low_code_id,
+								_low_code_child_id: data?._low_code_child_id,
+								_low_code_parent_id: data?._low_code_parent_id,
+								_low_code_type: data?.componentName === 'Text' ? 'JSXText' : 'JSXElement',
+							},
+							{}
+						);
 					}}
 				>
-					{!node?.isLeaf && <span onClick={onToggle}>{isOpen ? '[-]' : '[+]'}</span>}
-					{node.text}
+					{!node?.isLeaf ? (
+						<span onClick={onToggle} style={{ fontSize: 10, paddingRight: 4 }}>
+							{isOpen ? <DownOutlined /> : <RightOutlined />}
+						</span>
+					) : (
+						<span style={{ padding: '0 0.5em', display: 'inline-block' }} />
+					)}
+					{getIconByName(node.text, node)}
 				</div>
 			)}
 			sort={false}
+			initialOpen={openKeys}
 			insertDroppableFirst={false}
 			canDrop={(tree, { dragSource, dropTargetId }) => {
 				if (dragSource?.parent === dropTargetId) {
