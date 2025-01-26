@@ -11,7 +11,7 @@ const useOpenAttribute = () => {
 		// eslint-disable-next-line no-case-declarations
 		const { _low_code_id, _low_code_child_id } = item;
 
-		if (attributeValue) {
+		if (attributeValue || item?._low_code_type === 'JSXText') {
 			emitter.emit(LowCodeMessageEvent.AttributeValueChange, attributeValue);
 
 			setCurrentItemId(_low_code_id);

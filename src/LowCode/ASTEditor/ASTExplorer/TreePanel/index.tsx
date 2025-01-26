@@ -197,15 +197,12 @@ const TreePanel: React.FC = props => {
 					style={{ marginLeft: depth * 16 }}
 					onDoubleClick={e => {
 						const data = node?.data || {};
-						openAttributeHandle(
-							{
-								_low_code_id: data?._low_code_id,
-								_low_code_child_id: data?._low_code_child_id,
-								_low_code_parent_id: data?._low_code_parent_id,
-								_low_code_type: data?.componentName === 'Text' ? 'JSXText' : 'JSXElement',
-							},
-							{}
-						);
+						openAttributeHandle({
+							_low_code_id: data?._low_code_id,
+							_low_code_child_id: data?._low_code_child_id,
+							_low_code_parent_id: data?._low_code_parent_id,
+							_low_code_type: data?.componentName === 'Text' ? 'JSXText' : 'JSXElement',
+						});
 					}}
 					onMouseLeave={() => {
 						const iframe = document.querySelector('#lowcode-preview') as HTMLIFrameElement;
