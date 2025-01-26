@@ -207,6 +207,18 @@ const TreePanel: React.FC = props => {
 							{}
 						);
 					}}
+					onMouseLeave={() => {
+						const iframe = document.querySelector('#lowcode-preview') as HTMLIFrameElement;
+						const doc = iframe?.contentDocument;
+						const pEl = doc?.getElementById(node.data._low_code_id);
+						pEl?.classList.remove('low-code-target-item__hover');
+					}}
+					onMouseEnter={() => {
+						const iframe = document.querySelector('#lowcode-preview') as HTMLIFrameElement;
+						const doc = iframe?.contentDocument;
+						const pEl = doc?.getElementById(node.data._low_code_id);
+						pEl?.classList.add('low-code-target-item__hover');
+					}}
 				>
 					{!node?.isLeaf ? (
 						<span onClick={onToggle} style={{ fontSize: 10, paddingRight: 4 }}>
